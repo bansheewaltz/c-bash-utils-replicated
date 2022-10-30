@@ -1,6 +1,6 @@
-*
+# *
 !/src/
-!.gitignore
+# !.gitignore
 
 # Prerequisites
 *.d
