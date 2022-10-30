@@ -1,4 +1,5 @@
-group_project
+*
+!src/
 
 # Prerequisites
 *.d
