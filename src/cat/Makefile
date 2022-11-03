@@ -1,7 +1,7 @@
 CC=gcc
 
 CFLAGS= -Wall -Wextra -Werror
-COMMON_SOURCES= regex.c file.c
+COMMON_SOURCES= regex.c file.c options.c
 COMMON_PATH= ../common/
 CAT_SOURCES= main.c $(addprefix $(COMMON_PATH), $(COMMON_SOURCES))
 
