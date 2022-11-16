@@ -94,7 +94,8 @@ void symb_in_bounds() {
 }
 
 void show_nonprinting(int *cur_ch) {
-    if ((0 <= *cur_ch && *cur_ch < 9) || (10 < *cur_ch && *cur_ch < 32) || (126 < *cur_ch && *cur_ch <= 160)) {
+    if ((0 <= *cur_ch && *cur_ch < 9) || (10 < *cur_ch && *cur_ch < 32) ||
+        (126 < *cur_ch && *cur_ch <= 160)) {
         printf("^");
         if (*cur_ch > 126) {
             *cur_ch -= 64;
@@ -132,7 +133,8 @@ void process_files(int argc, char *argv[], int current_file, options *flags) {
                 } else {
                     empty_str_count = 0;
                 }
-                if (prev_ch == '\n' && ((flags->b_number_nonblank && cur_ch != '\n') || flags->n_number_lines))
+                if (prev_ch == '\n' &&
+                    ((flags->b_number_nonblank && cur_ch != '\n') || flags->n_number_lines))
                     printf("%6d\t", str_count++);
                 if (flags->T_show_tabs && cur_ch == '\t') {
                     printf("^");
