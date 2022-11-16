@@ -1,4 +1,4 @@
-// Implementation of Unix "cat" utility
+/* Implementation of Unix "cat" utility */
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,20 +37,18 @@ bool validate_long_option(options *flags, char *arg) {
     return is_all_good;
 }
 
-bool validate_option(options *flags, char *arg) {
-    bool is_all_good = true;
-
+bool validate_option(options *flags, char *arg, bool *invalid_option_met) {
     if (*arg == '-') {
         is_all_good = validate_long_option(flags, ++arg);
-    } else if (is_all_good == true) {
-        for (char *char_p = arg; *char_p; ++char_p) {
+    } else {
+        for (char *char_p = arg; *invalid_option_met == false && *char_p != '\0'; ++char_p) {
             if (*char_p == 'b') {
                 flags->b_number_nonblank = true;
                 flags->n_number_lines = false;
             } else if (*char_p == 'e') {
                 // flags->e_Ev_equiv = true; // redundant without OS detection
-                flags->v_show_nonprinting = true;
                 flags->E_show_EOLs = true;
+                flags->v_show_nonprinting = true;
             } else if (*char_p == 'E') {
                 flags->E_show_EOLs = true;
             } else if (*char_p == 'n') {
@@ -69,7 +67,7 @@ bool validate_option(options *flags, char *arg) {
                 flags->v_show_nonprinting = true;
             } else {
                 fprintf(stderr, "s21_cat: illegal option -- %c", *char_p);
-                is_all_good = false;
+                *invalid_option_met = true;
             }
         }
     }
@@ -79,19 +77,16 @@ bool validate_option(options *flags, char *arg) {
 
 int parse_arguments(int argc, char *argv[], options *flags) {
     int arg_n = 1;
+    bool invalid_option_met = false;
 
-    for (; arg_n < argc && arg_n > 0; ++arg_n) {
-        if (*argv[arg_n] == '-') {
-            ++argv[arg_n];
-            if (!validate_option(flags, argv[arg_n])) {
-                arg_n = 0;
-            }
-        } else {
-            break;
+    for (; arg_n < argc && *argv[arg_n] == '-' && invalid_option_met == false; ++arg_n) {
+        ++argv[arg_n];
+        if (validate_option(flags, argv[arg_n], &invalid_option_met)) {
+            invalid_option_met = true;
         }
     }
 
-    return arg_n;
+    return --arg_n;
 }
 
 void symb_in_bounds() {
