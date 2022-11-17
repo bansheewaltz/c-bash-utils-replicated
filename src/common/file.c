@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-char* readfile(char* filename, bool* error) {
-  char* buffer = 0;
+char *readfile(char *filename, bool *error) {
+  char *buffer = 0;
   long length;
-  FILE* f = fopen(filename, "rb");
+  FILE *f = fopen(filename, "rb");
 
   if (f) {
     fseek(f, 0, SEEK_END);

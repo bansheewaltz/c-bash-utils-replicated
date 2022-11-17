@@ -1,11 +1,17 @@
-#ifndef OPTIONS_H
-#define OPTIONS_H
+#ifndef MY_REGEX_H
+#define MY_REGEX_H
 
 #define ILLEGAL_OPTION ": illegal option -- "
 #define NO_SUCH_FILE ": No such file or directory"
 
-#include "regex.h"
+#include "command.h"
+#include <regex.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-void rmchr(char* str, char* dest, char c);
+void rmchr(const char *str, char *dest, char c);
+int matches(const char *arg, const char *regex_str);
+command check_option(const char *option, command_info info);
 
-#endif  // OPTIONS_H
+#endif // MY_REGEX_H
