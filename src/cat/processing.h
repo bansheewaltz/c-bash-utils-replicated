@@ -1,5 +1,3 @@
-/* This file was automatically generated.  Do not edit! */
-#undef INTERFACE
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
