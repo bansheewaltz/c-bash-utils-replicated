@@ -8,8 +8,8 @@
 #include "../common/command.h"
 #include "../common/options.h"
 
-#define COMMAND "s21_grep: "
-#define GREP_OPTIONS_REGEX "(-[eivcln]+)+"
-#define OPTIONS_STR "eivcln"
+#define COMMAND "grep: "
+#define GREP_OPTIONS_REGEX "^-[eivclnhsf]+$"
+#define OPTIONS_STR "eivclnhsf"
 
 #endif // MAIN_H

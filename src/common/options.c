@@ -16,17 +16,16 @@ void rmchr(const char *str, char *dest, char c) {
   dest[j] = '\0';
 }
 
-command check_option(const char *option, command_info info) {
-  command c;
-  if (matches(option, info.regex)) {
+int is_options_valid(const char *option, command_info *info) {
+  int valid;
+  if ((valid = matches(option, info->validity_regex))) {
     char *buffer = malloc(strlen(option));
     rmchr(option, buffer, '-');
-    for (int j = 0; j < strlen(option); j++) {
-      char *ptr = strstr(info.options, &buffer[j]);
-      if (ptr != NULL) {
-        printf("Match: %c\n", *ptr);
-      }
+    for (int j = 0; j < strlen(buffer); j++) {
+      char ptr = *strstr(info->options_str, &buffer[j]);
+      add_option_info(info, ptr);
     }
+    free(buffer);
   }
-  return c;
+  return valid;
 }

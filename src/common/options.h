@@ -12,6 +12,6 @@
 
 void rmchr(const char *str, char *dest, char c);
 int matches(const char *arg, const char *regex_str);
-command check_option(const char *option, command_info info);
+int is_options_valid(const char *option, command_info *info);
 
 #endif // MY_REGEX_H
