@@ -1,11 +1,14 @@
 /* This file was automatically generated.  Do not edit! */
 #undef INTERFACE
-void print_error_illegal_option(char *argv[],int invalid_len,char *invalid_opt);
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#define BIN_NAME (argv[0] + 2)
-void print_error_no_file(char *argv[],int file_ndx);
+
+#include "structs.h"
+#define ASCII_SHIFT 64
+#define ASCII_SHIFT_BOUND 126
+
+void process_text(FILE *file_p, s_options *flags);
