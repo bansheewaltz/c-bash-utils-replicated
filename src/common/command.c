@@ -1,6 +1,6 @@
 #include "command.h"
 #include <stdlib.h>
-#include <stdio.h>
+
 
 command init_command(const char *name, func funcs[], int size) {
   command c;
@@ -22,13 +22,17 @@ command_info init_info(const char *options, const char *regex) {
   return info;
 }
 
-void add_option_info(command_info* info, char option) {
-  info->current_options = realloc(info->current_options, info->count + 1);
-  info->current_options[info->count++] = option;
+void add_option(command_info* info, char name) {
+  info->current_options = realloc(info->current_options, (info->count + 1) * sizeof(option));
+  info->current_options[info->count++] = init_option(name);
 }
 
 void clear_args(command c) {
   for (int i = 0; i < 10; ++i) {
     c.args[i] = NULL;
   }
+}
+
+option* last_option(command_info* info) {
+  return &(info->current_options[info->count]);
 }

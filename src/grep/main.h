@@ -6,10 +6,12 @@
 #include <string.h>
 
 #include "../common/command.h"
+#include "../common/file.h"
 #include "../common/options.h"
 
 #define COMMAND "grep: "
 #define GREP_OPTIONS_REGEX "^-[eivclnhsf]+$"
 #define OPTIONS_STR "eivclnhsf"
+#define OPTIONS_WITH_ARGUMENTS "[ef]"
 
 #endif // MAIN_H

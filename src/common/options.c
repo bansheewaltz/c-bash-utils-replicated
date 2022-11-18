@@ -1,11 +1,12 @@
 #include "options.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 int matches(const char *arg, const char *regex_str) {
-  char buffer[100];
   regex_t regex;
   regcomp(&regex, regex_str, REG_EXTENDED);
-  int result = regexec(&regex, arg, 0, NULL, 0);
-  return result != REG_NOMATCH;
+  return regexec(&regex, arg, 0, NULL, 0) != REG_NOMATCH;
 }
 
 void rmchr(const char *str, char *dest, char c) {
@@ -22,10 +23,24 @@ int is_options_valid(const char *option, command_info *info) {
     char *buffer = malloc(strlen(option));
     rmchr(option, buffer, '-');
     for (int j = 0; j < strlen(buffer); j++) {
-      char ptr = *strstr(info->options_str, &buffer[j]);
-      add_option_info(info, ptr);
+      char name = *strstr(info->options_str, &buffer[j]);
+      add_option(info, name);
     }
     free(buffer);
   }
   return valid;
+}
+
+int has_argument(option opt, const char *regex_str) {
+  return matches(&opt.name, regex_str);
+}
+
+option init_option(char name) {
+  option opt;
+  opt.name = name;
+  opt.argument = NULL;
+  return opt;
+}
+void add_argument(option *option, const char *arg) {
+  option->argument = arg;
 }

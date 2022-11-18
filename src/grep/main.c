@@ -1,10 +1,26 @@
 #include "main.h"
 
-int main(int argc, char *options[]) {
-  command_info info = init_info(OPTIONS_STR, GREP_OPTIONS_REGEX);
-  for (int i = 1; i < argc; i++) {
-    if (is_options_valid(options[i], &info)) {
+int check_for_arguments(command_info *info, char *options[], int count, int *i);
 
+int main(int count, char *options[]) {
+  command_info info = init_info(OPTIONS_STR, GREP_OPTIONS_REGEX);
+  int error = 0;
+  for (int i = 1; i < count && !error; i++) {
+    error = is_options_valid(options[i], &info);
+    if (!error) {
+      error = check_for_arguments(&info, options, count, &i);
+    }
+  }
+}
+
+int check_for_arguments(command_info *info, char *options[], int count,
+                        int *i) {
+  if (has_argument(info->current_options[info->count],
+                   OPTIONS_WITH_ARGUMENTS)) {
+    if (count <= *i) {
+      fprintf(stderr,"%s %s", COMMAND, NO_ARGUMENT);
+    } else {
+      add_argument(last_option(info), options[++(*i)]);
     }
   }
 }

@@ -1,6 +1,11 @@
 #ifndef C3_SIMPLEBASHUTILS_0_FUNC_H
 #define C3_SIMPLEBASHUTILS_0_FUNC_H
-#include <string.h>
+
+
+typedef struct {
+  char name;
+  const char *argument;
+} option;
 
 // Option implementation
 typedef struct {
@@ -22,13 +27,18 @@ typedef struct {
 typedef struct {
   const char *options_str;
   const char *validity_regex;
-  char *current_options;
+  const char *arguments_options_regex;
+  option *current_options;
   int count;
 } command_info;
 
 command init_command(const char *name, func funcs[], int size);
 command_info init_info(const char *options, const char *regex);
-void add_option_info(command_info* info, char option);
+
+void add_option(command_info* info, char name);
+option init_option(char name);
+option* last_option(command_info* info);
+
 void clear_args(command c);
 
 #endif // C3_SIMPLEBASHUTILS_0_FUNC_H
