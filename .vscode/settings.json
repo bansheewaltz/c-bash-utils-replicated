@@ -4,6 +4,7 @@
         "__locale": "c",
         "functional": "c",
         "regex.h": "c",
-        "options.h": "c"
+        "options.h": "c",
+        "string.h": "c"
     }
 }

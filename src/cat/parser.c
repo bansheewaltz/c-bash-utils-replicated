@@ -86,13 +86,13 @@ bool parse_options(int argc, char *argv[], s_options *flags,
   if (!invalid_opt) {
     options_conflict_resolution(flags);
   } else {
-    print_error_illegal_option(argv, invalid_len, invalid_opt);
+    print_error_illegal_option((const char **)argv, invalid_len, invalid_opt);
   }
 
   return invalid_opt ? false : true;
 }
 
-void print_error_illegal_option(char *argv[], int invalid_len,
+void print_error_illegal_option(char const *argv[], int invalid_len,
                                 char *invalid_opt) {
   fprintf(stderr, "%s: illegal option -- %.*s\n", BIN_NAME, invalid_len,
           invalid_opt);

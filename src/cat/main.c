@@ -21,10 +21,10 @@ int main(int argc, char *argv[]) {
       file_p = fopen(argv[file_ndx], "r");
       if (file_p != NULL) {
         process_text(file_p, &flags);
+        fclose(file_p);
       } else {
         print_error_no_file(argv, file_ndx);
       }
-      fclose(file_p);
     }
   }
 

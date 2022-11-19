@@ -8,7 +8,7 @@
 #include "structs.h"
 #define BIN_NAME (argv[0] + 2)
 
-void print_error_illegal_option(char *argv[], int invalid_len,
+void print_error_illegal_option(char const *argv[], int invalid_len,
                                 char *invalid_opt);
 void options_conflict_resolution(s_options *flags);
 void sort_argv(int argc, char *argv[], int *filename_was_given);
