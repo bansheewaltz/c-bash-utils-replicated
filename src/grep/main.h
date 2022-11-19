@@ -9,9 +9,9 @@
 #include "../common/file.h"
 #include "../common/options.h"
 
-#define COMMAND "grep: "
+#define COMMAND "grep"
 #define GREP_OPTIONS_REGEX "^-[eivclnhsf]+$"
 #define OPTIONS_STR "eivclnhsf"
-#define OPTIONS_WITH_ARGUMENTS "[ef]"
+#define OPTIONS_WITH_ARGUMENTS "[f]"
 
 #endif // MAIN_H

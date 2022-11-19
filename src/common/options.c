@@ -17,14 +17,13 @@ void rmchr(const char *str, char *dest, char c) {
   dest[j] = '\0';
 }
 
-int is_options_valid(const char *option, command_info *info) {
+int find_valid_options(const char *option, command *utility) {
   int valid;
-  if ((valid = matches(option, info->validity_regex))) {
+  if ((valid = matches(option, utility->info.validity_regex))) {
     char *buffer = malloc(strlen(option));
     rmchr(option, buffer, '-');
-    for (int j = 0; j < strlen(buffer); j++) {
-      char name = *strstr(info->options_str, &buffer[j]);
-      add_option(info, name);
+    for (int j = 1; j < strlen(option); j++) {
+      add_option(utility, option[j]);
     }
     free(buffer);
   }
@@ -35,12 +34,36 @@ int has_argument(option *opt, const char *regex_str) {
   return matches(&opt->name, regex_str);
 }
 
-option init_option(char name) {
-  option opt;
-  opt.name = name;
-  opt.argument = NULL;
-  return opt;
+void add_option_argument(option *option, const char *arg) { option->argument = arg; }
+
+void save_options(command *utility, int count, char *options[], int *i) {
+  int error = 0;
+  for (; *i < count && !error; (*i)++) {
+    error = !find_valid_options(options[*i], utility);
+    if (!error) {
+      error = option_arguments_satisfied(utility, options, count, i);
+    }
+  }
 }
-void add_argument(option *option, const char *arg) {
-  option->argument = arg;
+
+int option_arguments_satisfied(command *utility, char *options[], int count,
+                               int *i) {
+  int need_arg =
+      has_argument(last_option(utility), utility->info.arguments_options_regex);
+  if (need_arg) {
+    if (count <= *i + 1) {
+      fprintf(stderr, "%s: %s %c", utility->name, utility->info.errors[1],
+              last_option(utility)->name);
+    } else {
+      add_option_argument(last_option(utility), options[++(*i)]);
+    }
+  }
+  return need_arg && count <= *i + 1;
+}
+
+void save_arguments(command *utility, int count, char *options[], int *i) {
+  printf("%d %d --\n", *i, count);
+  for (int j = *i; j < count; j++) {
+    add_utility_argument(utility, options[j]);
+  }
 }
