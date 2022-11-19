@@ -31,8 +31,8 @@ int is_options_valid(const char *option, command_info *info) {
   return valid;
 }
 
-int has_argument(option opt, const char *regex_str) {
-  return matches(&opt.name, regex_str);
+int has_argument(option *opt, const char *regex_str) {
+  return matches(&opt->name, regex_str);
 }
 
 option init_option(char name) {

@@ -2,29 +2,25 @@
 #define C3_SIMPLEBASHUTILS_0_FUNC_H
 
 
-typedef struct {
+typedef struct utility_option{
   char name;
   const char *argument;
 } option;
 
-// Option implementation
-typedef struct {
+typedef struct option_func{
   void *addr;
   const char *option;
   int priority;
 } func;
 
-// Terminal utility representation
-typedef struct {
+typedef struct utility{
   func *options_funcs;
   int size;
   const char *name;
   char *args[10];
 } command;
 
-
-// Info about current usage of utility
-typedef struct {
+typedef struct command_info {
   const char *options_str;
   const char *validity_regex;
   const char *arguments_options_regex;

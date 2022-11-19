@@ -14,7 +14,7 @@ int matches(const char *arg, const char *regex_str);
 int is_options_valid(const char *option, command_info *info);
 
 // Option
-int has_argument(option opt, const char *regex_str);
+int has_argument(option *opt, const char *regex_str);
 void add_argument(option *option, const char *arg);
 
 // Print errors
