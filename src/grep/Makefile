@@ -22,7 +22,7 @@ clean:
 build: $(EXECUTABLE)
 
 run:
-	./$(EXECUTABLE) -e [a-z]
+	./$(EXECUTABLE) -e
 
 $(EXECUTABLE):
 	$(CC) $(LDFLAGS) $(CAT_SOURCES) $(LIBRARIES) -o $@

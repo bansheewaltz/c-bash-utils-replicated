@@ -16,12 +16,12 @@ int find_valid_options(const char *option, command *utility);
 // Option
 int has_argument(option *opt, const char *regex_str);
 void add_option_argument(option *option, const char *arg);
-void save_options(command *utility, int count, char *options[], int *i);
+int save_options(command *utility, int count, char *options[], int *i);
 int option_arguments_satisfied(command *utility, char *options[], int count,
                                int *i);
 
 // Arguments
-void save_arguments(command *utility, int count, char *options[], int *i);
+int save_arguments(command *utility, int count, char *options[], int *i);
 
 // Print errors
 

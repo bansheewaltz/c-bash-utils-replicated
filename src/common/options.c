@@ -20,12 +20,9 @@ void rmchr(const char *str, char *dest, char c) {
 int find_valid_options(const char *option, command *utility) {
   int valid;
   if ((valid = matches(option, utility->info.validity_regex))) {
-    char *buffer = malloc(strlen(option));
-    rmchr(option, buffer, '-');
     for (int j = 1; j < strlen(option); j++) {
       add_option(utility, option[j]);
     }
-    free(buffer);
   }
   return valid;
 }
@@ -36,14 +33,18 @@ int has_argument(option *opt, const char *regex_str) {
 
 void add_option_argument(option *option, const char *arg) { option->argument = arg; }
 
-void save_options(command *utility, int count, char *options[], int *i) {
+int save_options(command *utility, int count, char *options[], int *i) {
   int error = 0;
   for (; *i < count && !error; (*i)++) {
     error = !find_valid_options(options[*i], utility);
     if (!error) {
       error = option_arguments_satisfied(utility, options, count, i);
+    } else if (count == *i) {
+      fprintf(stderr, "%s: %s %c", utility->name, utility->info.errors[1],
+              last_option(utility)->name);
     }
   }
+  return error;
 }
 
 int option_arguments_satisfied(command *utility, char *options[], int count,
@@ -61,7 +62,7 @@ int option_arguments_satisfied(command *utility, char *options[], int count,
   return need_arg && count <= *i + 1;
 }
 
-void save_arguments(command *utility, int count, char *options[], int *i) {
+int save_arguments(command *utility, int count, char *options[], int *i) {
   printf("%d %d --\n", *i, count);
   for (int j = *i; j < count; j++) {
     add_utility_argument(utility, options[j]);

@@ -12,6 +12,6 @@
 #define COMMAND "grep"
 #define GREP_OPTIONS_REGEX "^-[eivclnhsf]+$"
 #define OPTIONS_STR "eivclnhsf"
-#define OPTIONS_WITH_ARGUMENTS "[f]"
+#define OPTIONS_WITH_ARGUMENTS "[ef]"
 
 #endif // MAIN_H
