@@ -1,5 +1,7 @@
-#include <stdbool.h>
+#ifndef SRC_CAT_STRUCTS_H_
+#define SRC_CAT_STRUCTS_H_
 
+#include <stdbool.h>
 typedef struct {
   bool opt_b_number_nonblank;
   /* macOS-specific option, equivalent to E + v combination in GNU versioin */
@@ -21,3 +23,5 @@ typedef struct {
   int empty_str_count;
   bool already_printed;
 } s_info;
+
+#endif  // SRC_CAT_STRUCTS_H_#endif
