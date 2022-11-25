@@ -1,7 +1,15 @@
 /* Realization of Unix[-like] "cat" utility based on macOS-specific version
 ** with some GNU-specific features added.
 ** Character by character processing approach */
-#include "main.h"
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include "parser.h"
+#include "processor.h"
+#include "structs.h"
+#define FALSE_ALL_BOOLS {false};
 
 int main(int argc, char *argv[]) {
   s_options flags = FALSE_ALL_BOOLS;

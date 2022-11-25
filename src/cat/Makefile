@@ -5,7 +5,7 @@ CFLAGS := -Wall -Wextra -Werror -g #-O2
 STD := -std=c11
 ASAN := -fsanitize=address #-fstack-protector-all -fsanitize=pointer-compare \
         -fsanitize=pointer-subtract# -fsanitize=leak
-SRC := main.c parser.c processing.c
+SRC := main.c parser.c processor.c
 BIN := s21_cat
 TESTS_DIR := ./test_cat
 # aliases

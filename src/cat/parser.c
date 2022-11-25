@@ -1,7 +1,15 @@
-#include "parser.h"
+#include <ctype.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
-void validate_option(s_options *flags, char arg[], char **invalid_opt,
-                     int *invalid_len) {
+#include "structs.h"
+#define BIN_NAME (argv[0] + 2)
+
+static void validate_option(s_options *flags, char arg[], char **invalid_opt,
+                            int *invalid_len) {
   if (*arg == '-' && *arg++) {
     if (strcmp(arg, "number-nonblank") == 0) {
       flags->opt_b_number_nonblank = true;
@@ -40,7 +48,7 @@ void validate_option(s_options *flags, char arg[], char **invalid_opt,
   }
 }
 
-void move_arg_to_the_end(int i, int argc, char *argv[]) {
+static void move_arg_to_the_end(int i, int argc, char *argv[]) {
   char *t = argv[i];
   for (int j = i; j < argc - 1; ++j) {
     argv[j] = argv[j + 1];
@@ -48,7 +56,7 @@ void move_arg_to_the_end(int i, int argc, char *argv[]) {
   argv[argc - 1] = t;
 }
 
-void sort_argv(int argc, char *argv[], int *filename_was_given) {
+static void sort_argv(int argc, char *argv[], int *filename_was_given) {
   int opt_c = 0;
   int file_c = 0;
   for (int i = 1; opt_c + file_c < argc - 1; ++i) {
@@ -63,10 +71,21 @@ void sort_argv(int argc, char *argv[], int *filename_was_given) {
   file_c ? (*filename_was_given = opt_c + 1) : 0;
 }
 
-void options_conflict_resolution(s_options *flags) {
+static void options_conflict_resolution(s_options *flags) {
   if (flags->opt_b_number_nonblank == true) {  // options сonflict resolution
     flags->opt_n_number_lines = false;
   }
+}
+
+static void print_error_illegal_option(char const *argv[], int invalid_len,
+                                       char *invalid_opt) {
+  fprintf(stderr, "%s: illegal option -- %.*s\n", BIN_NAME, invalid_len,
+          invalid_opt);
+  fprintf(stderr,
+          "usage: ./%s "
+          "[-[beEnstTv] | --[(number-nonblank)|(number)|(squeeze-blank)]] "
+          "[file...]\n",
+          BIN_NAME);
 }
 
 bool parse_options(int argc, char *argv[], s_options *flags,
@@ -90,17 +109,6 @@ bool parse_options(int argc, char *argv[], s_options *flags,
   }
 
   return invalid_opt ? false : true;
-}
-
-void print_error_illegal_option(char const *argv[], int invalid_len,
-                                char *invalid_opt) {
-  fprintf(stderr, "%s: illegal option -- %.*s\n", BIN_NAME, invalid_len,
-          invalid_opt);
-  fprintf(stderr,
-          "usage: ./%s "
-          "[-[beEnstTv] | --[(number-nonblank)|(number)|(squeeze-blank)]] "
-          "[file...]\n",
-          BIN_NAME);
 }
 
 void print_error_no_file(char *argv[], int file_ndx) {
