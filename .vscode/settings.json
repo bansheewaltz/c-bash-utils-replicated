@@ -5,6 +5,12 @@
         "functional": "c",
         "regex.h": "c",
         "options.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "stdbool.h": "c",
+        "processor.h": "c",
+        "structs.h": "c",
+        "parser.h": "c",
+        "unistd.h": "c",
+        "stdlib.h": "c"
     }
 }

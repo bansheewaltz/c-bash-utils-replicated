@@ -2,6 +2,7 @@
 #define SRC_CAT_STRUCTS_H_
 
 #include <stdbool.h>
+
 typedef struct {
   bool opt_b_number_nonblank;
   /* macOS-specific option, equivalent to E + v combination in GNU versioin */

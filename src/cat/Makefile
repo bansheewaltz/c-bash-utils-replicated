@@ -27,7 +27,7 @@ test: build
 	@rm -rf $(TESTS_DIR)/$(BIN)
 leak: build
 	clear
-	leaks -atExit -- ./$(BIN) $(TESTS_DIR)/data_samples/* 2>/dev/null | grep -aE 'nodes|total|TOTAL|LEAK'
+	echo; leaks -atExit -- ./$(BIN) $(TESTS_DIR)/data_samples/* 2>/dev/null | grep -aE 'nodes|total|TOTAL|LEAK'
 	@#leaks -atExit -- ./$(BIN) $(TESTS_DIR)/data_samples/* | grep -aE 'nodes|total|TOTAL|LEAK'
 leaks: build
 	@$(CLEAR_SCREEN)

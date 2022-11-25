@@ -1,14 +1,13 @@
-### script for testing all combinations of test_options ###
 #!/bin/bash
+### script for testing all combinations of test_options ###
+
+# presets
+cat_macOS="-b -e -n -s -t -v"
+cat_GNU="-b -e -n -s -t -v -E -T --number --squeeze-blank --number-nonblank"
 
 ##### USER DEFINED VALUES
-### utility name
 utility="cat"
-# utility="grep"
-### macOS cat options
-options_set="-b -e -n -s -t -v"
-### GNU cat options
-# options_set="-b -e -n -s -t -v -E -T --number --squeeze-blank --number-nonblank"
+options_set=$cat_macOS
 ### data sample settings
 test_dir="./data_samples/"
 test_file="test_case_cat.txt"
@@ -65,7 +64,7 @@ testing() {
     fi
 }
 
-# *Turn on to suppress errors output during the testing*
+# *Turn on to suppress stderror output during the testing*
 exec 2>/dev/null
 #
 combine_and_pass $options_set

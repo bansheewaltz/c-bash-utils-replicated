@@ -1,10 +1,8 @@
 /* Realization of Unix[-like] "cat" utility based on macOS-specific version
 ** with some GNU-specific features added.
 ** Character by character processing approach */
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include "parser.h"
 #include "processor.h"
