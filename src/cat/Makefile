@@ -1,4 +1,5 @@
-.PHONY: all build build_chect build_lign test leak leaks style clean rebuild re add_clang sign_code
+.PHONY: all build build_heavy build_light test leak leaks style \
+		legacy_style clean rebuild re add_clang sign_code
 CC := gcc
 CFLAGS := -Wall -Wextra -Werror -g #-O2
 STD := -std=c11
@@ -15,7 +16,7 @@ all: build
 build: $(BIN)
 $(BIN):
 	$(CC) $(CFLAGS) $(STD) $(SRC) -o $(BIN)
-build_check:
+build_heavy:
 	$(CC) $(CFLAGS) $(ASAN) $(STD) $(SRC) -o $(BIN)
 build_light:
 	$(CC) $(SRC) -o $(BIN)
@@ -50,7 +51,6 @@ clean:
 	@rm -rf ../.clang-format
 rebuild: re
 re:
-	clear
 	@$(MAKE) clean
 	@$(MAKE) build
 add_clang:
