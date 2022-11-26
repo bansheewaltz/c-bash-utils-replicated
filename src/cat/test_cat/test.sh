@@ -7,11 +7,12 @@ cat_GNU="-b -e -n -s -t -v -E -T --number --squeeze-blank --number-nonblank"
 
 ##### USER DEFINED PARAMETERS
 utility="cat"
-options_set=$cat_macOS
+options_set=$cat_GNU
 exec 2>/dev/null # *Turn on to suppress stderror output during the testing*
 ### data sample settings
 test_dir="./data_samples/"
 test_file="test_case_cat.txt"
+failed_log="failed_cases.log"
 #####
 
 # variables
@@ -64,7 +65,7 @@ testing() {
         ((fail_c++))
         printf "${RED}%0${fw}d${REG}/${GRN}%0${fw}d${REG}/%0${fw}d ${RED}%-7s${REG} %-${options_len}s %s\n" \
             $fail_c $success_c $total_c "FAILURE" "$test_options" "$test_file"
-        echo "$test_options" "$test_file" >>failed_cases.log
+        echo "$test_options" "$test_file" >>$failed_log
     fi
 }
 
@@ -81,6 +82,13 @@ print_result() {
         local output_len=$((msg_len + fw * 2 + 3 + 1))
         printf "${RED}%*d${REG}/%*d | %s\n" \
             $(((total_len - output_len) / 2 + fw)) $fail_c $((fw)) $total_c "$failure_msg"
+        local log_msg="check failed cases in \"$failed_log\" file"
+        local log_msg_len="${#log_msg}"
+        local ORN="\033[38;5;179m"
+        # local REG="\033[0m"
+        printf "${ORN}%*s${REG}\n" \
+            $(((total_len - log_msg_len) / 2 + log_msg_len)) "$log_msg"
+        echo
 
     else
         local msg_len="${#success_msg}"
