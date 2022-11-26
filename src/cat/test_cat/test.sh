@@ -7,7 +7,7 @@ cat_GNU="-b -e -n -s -t -v -E -T --number --squeeze-blank --number-nonblank"
 
 ##### USER DEFINED PARAMETERS
 utility="cat"
-options_set=$cat_GNU
+options_set=$cat_macOS
 exec 2>/dev/null # *Turn on to suppress stderror output during the testing*
 ### data sample settings
 test_dir="./data_samples/"
@@ -47,7 +47,7 @@ combine_and_pass() {
 }
 
 testing() {
-    local test_options=$@
+    local test_options="$@"
     local test_path=${test_dir}${test_file}
     local test_entry="$test_options $test_path"
 
@@ -64,21 +64,33 @@ testing() {
         ((fail_c++))
         printf "${RED}%0${fw}d${REG}/${GRN}%0${fw}d${REG}/%0${fw}d ${RED}%-7s${REG} %-${options_len}s %s\n" \
             $fail_c $success_c $total_c "FAILURE" "$test_options" "$test_file"
+        echo "$test_options" "$test_file" >>failed_cases.log
     fi
 }
 
 print_result() {
+    local appeal="DUDE... "
+    local success_msg="${appeal}ЦЕ ДУЖЕ ДОБРЕ"
+    local failure_msg="${appeal}КРАЩЕ Б ТОБІ ЦЕ ПОЛАГОДИТИ"
+    local delim=" | "
+    local delim_len="${#delim}"
+
     printf "%${total_len}s\n" | tr " " "-"
-    if [ $fail_c ]; then
-        printf "${RED}%*d/${REG}%*d\n" $((2 * fw + 1)) $fail_c $((fw)) $total_c
+    if [ "$fail_c" -gt 0 ]; then
+        local msg_len="${#failure_msg}"
+        local output_len=$((msg_len + fw * 2 + 3 + 1))
+        printf "${RED}%*d${REG}/%*d | %s\n" \
+            $(((total_len - output_len) / 2 + fw)) $fail_c $((fw)) $total_c "$failure_msg"
 
     else
-        printf "${GRN}%*d/${REG}%*d\n" $((2 * fw + 1)) $success_c $((fw)) $total_c
+        local msg_len="${#success_msg}"
+        local output_len=$((msg_len + fw * 2 + 3 + 1))
+        printf "${GRN}%*d${REG}/%*d | %s\n" \
+            $(((total_len - output_len) / 2 + fw)) $success_c $((fw)) $total_c "$success_msg"
     fi
-    printf "%${total_len}s\n" | tr " " "="
-    printf "%*s\n" $(((total_len + 9 - 2) / 2)) "ALL GOOD"
 }
 
+rm failed_cases.log
 combine_and_pass $options_set
 print_result
 rm $s21_log $log
