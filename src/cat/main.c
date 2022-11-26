@@ -6,7 +6,6 @@
 
 #include "parser.h"
 #include "processor.h"
-#include "structs.h"
 #define FALSE_ALL_BOOLS {false};
 
 int main(int argc, char *argv[]) {

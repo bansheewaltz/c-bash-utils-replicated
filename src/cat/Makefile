@@ -1,5 +1,5 @@
 .PHONY: all build build_heavy build_light test leak leaks style \
-		legacy_style clean rebuild re add_clang sign_code
+		legacy_style clean rebuild re add_clang sign_code install uninstall
 CC := gcc
 CFLAGS := -Wall -Wextra -Werror -g #-O2
 STD := -std=c11
@@ -58,3 +58,7 @@ add_clang:
 sign_code: # macOS only
 	/usr/libexec/PlistBuddy -c "Add :com.apple.security.get-task-allow bool true" tmp.entitlements
 	codesign -s - --entitlements tmp.entitlements -f $(BIN)
+install: build
+	install -m 0755 $(BIN) /usr/local/bin
+uninstall:
+	rm -f /usr/local/bin/$(BIN)
