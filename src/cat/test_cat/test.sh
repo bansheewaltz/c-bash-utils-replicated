@@ -5,13 +5,15 @@
 cat_macOS="-b -e -n -s -t -v"
 cat_GNU="-b -e -n -s -t -v -E -T --number --squeeze-blank --number-nonblank"
 
-##### USER DEFINED PARAMETERS
+##### USER DEFINED TESTING PARAMETERS
 utility="cat"
 options_set=$cat_GNU
-exec 2>/dev/null # *Turn on to suppress stderror output during the testing*
+exec 2>/dev/null              # *Turn on/off by (un)commenting to suppress stderror output during the testing*
+opt_substitute_options="true" # substitute some of non-compatible macOS options
+opt_cleanup_nonlegit="true"   # cleanup log file by deleting non-legit macOS options
 ### data sample settings
 test_dir="./data_samples/"
-test_file="test_case_cat.txt"
+test_file="test_case_cat.txt" # multiple files could be set
 failed_log="failed_cases.log"
 #####
 
@@ -35,6 +37,11 @@ options_len="${#options_set}"
 testname_len="${#test_file}"
 total_len=$((fw * 3 + 2 + 1 + 7 + 1 + options_len + 1 + testname_len))
 
+clean_nonlegit_log() {
+    sed -i '' '/-E/d' ./$failed_log
+    sed -i '' '/-T/d' ./$failed_log
+}
+
 combine_and_pass() {
     local limit=$((1 << $#))
     local -a args=("$@")
@@ -47,13 +54,28 @@ combine_and_pass() {
     done
 }
 
+substitute() {
+    # string manipulation to get around non-legit options for macOS system cat
+    sys_test_entry=${test_entry//--squeeze-blank/-s}
+    sys_test_entry=${sys_test_entry//--number-nonblank/-b}
+    sys_test_entry=${sys_test_entry//--number/-n}
+    # won't resolve the problem but will affect some cases
+    sys_test_entry=${sys_test_entry//-E/-e}
+    sys_test_entry=${sys_test_entry//-T/-t}
+}
+
 testing() {
     local test_options="$@"
     local test_path=${test_dir}${test_file}
     local test_entry="$test_options $test_path"
 
     ./$s21_utility $test_entry >$s21_log
-    $utility $test_entry >$log
+    if [ "$opt_substitute_options" == "true" ]; then
+        substitute
+    else
+        sys_test_entry=$test_entry
+    fi
+    $utility $sys_test_entry >$log
 
     local diff_red="$(diff -s $s21_log $log)"
     ((total_c++))
@@ -95,10 +117,16 @@ print_result() {
         local output_len=$((msg_len + fw * 2 + 3 + 1))
         printf "${GRN}%*d${REG}/%*d | %s\n" \
             $(((total_len - output_len) / 2 + fw)) $success_c $((fw)) $total_c "$success_msg"
+        echo
     fi
 }
 
-rm failed_cases.log
+### main sript
+rm $failed_log
 combine_and_pass $options_set
 print_result
+if [ "$opt_cleanup_nonlegit" == "true" ]; then
+    clean_nonlegit_log
+fi
 rm $s21_log $log
+###
