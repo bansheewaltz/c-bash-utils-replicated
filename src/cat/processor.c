@@ -65,7 +65,7 @@ static void number_lines(s_info *info) { printf("%6d\t", info->str_count++); }
 void process_text(FILE *file_p, s_options *flags) {
   s_info info = {.str_count = 1, .prev_ch = '\n', .flags = flags};
 
-  while ((info.cur_ch = getc(file_p)) != EOF) {
+  while ((signed char)(info.cur_ch = getc(file_p)) != EOF) {
     info.already_printed = false;
     if (isgraph(info.cur_ch) && info.prev_ch != '\n') {
       putchar(info.cur_ch);

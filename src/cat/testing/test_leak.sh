@@ -28,7 +28,7 @@ declare -a extra=(
     "-v ${path}test_5_cat.txt"
 )
 
-exec 2>/dev/null
+# exec 2>/dev/null
 testing() {
     t=$(echo $@ | sed "s/VAR/$var/")
     leaks -quiet -atExit -- ./s21_cat $t >test_s21_cat.log

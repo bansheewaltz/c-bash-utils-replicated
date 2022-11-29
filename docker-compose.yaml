@@ -1,6 +1,0 @@
-
-version: '3.1'
-services:
-  miniverter:
-    container_name: school21/miniverter:1.0
-    build: ./materials/build/

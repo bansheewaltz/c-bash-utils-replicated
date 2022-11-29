@@ -1,0 +1,14 @@
+FROM alpine
+
+WORKDIR /home/usr/src
+
+RUN apk add --no-cache gcc \
+    make \
+    musl-dev \
+    vim \
+    bash
+
+
+COPY src/cat .
+
+CMD [ "make", "build_check" ]
