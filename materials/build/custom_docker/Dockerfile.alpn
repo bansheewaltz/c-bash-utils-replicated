@@ -1,8 +1,9 @@
 FROM alpine
 
-WORKDIR /home/usr/src
+WORKDIR /usr/src
 
-RUN apk add --no-cache gcc \
+RUN apk --no-cache add gcc \
+    valgrind \
     make \
     musl-dev \
     vim \
@@ -11,4 +12,4 @@ RUN apk add --no-cache gcc \
 
 COPY src/cat .
 
-CMD [ "make", "build_check" ]
+# CMD [ "make", "build_check" ]

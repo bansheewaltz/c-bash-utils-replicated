@@ -39,13 +39,12 @@ TEST_JSON=tests/tests.json
 
 for TEST_NUMBER in $(jq ".tests[].number" ${TEST_JSON}); do
   NAME_CATEGORY=$(jq -r ".tests[$TEST_NUMBER].name" ${TEST_JSON})
-  IFS='.' read -ra ARR_NAME_CATEGORY <<< "$NAME_CATEGORY"
+  IFS='.' read -ra ARR_NAME_CATEGORY <<<"$NAME_CATEGORY"
   NAME=${ARR_NAME_CATEGORY[0]}
   CATEGORY=${ARR_NAME_CATEGORY[1]}
   PART=${CATEGORY: -1}
 
-  if [ "$LAST_PART" != "$PART" ]
-  then
+  if [ "$LAST_PART" != "$PART" ]; then
     echo -e "Part:" ${NAME}"\n"
     LAST_PART=$PART
     BUILD_SCRIPT=ci-scripts/build.sh
@@ -56,5 +55,3 @@ for TEST_NUMBER in $(jq ".tests[].number" ${TEST_JSON}); do
     echo -e "-------------------------------------------------------------------------------\n"
   fi
 done
-
-

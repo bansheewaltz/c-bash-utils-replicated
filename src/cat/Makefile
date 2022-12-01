@@ -10,17 +10,20 @@ ASAN := -fsanitize=address# -fstack-protector-all -fsanitize=pointer-compare \
 SRC := main.c parser.c processor.c
 BIN := s21_cat
 TESTS_DIR := ./testing
+BUILD := ../../materials/build/custom_docker
 # aliases
 CLEAR_SCREEN := clear #tput reset
 
 
 all: build
-build: build_functional
-build_functional: add_clang $(BIN)
+build: build_functional add_clang
+build_functional: $(BIN)
 $(BIN):
 	$(CC) -o $(BIN) $(OPT) $(SRC) 
-build_check:
-	$(CC) -o $(BIN) $(CFLAGS) $(STD) $(DBG) $(OPT) $(SRC)
+compile_check:
+	$(CC) -o $(BIN) $(DBG) $(CFLAGS) $(STD) $(OPT) $(SRC)
+build_debug:
+	$(CC) -o $(BIN) $(DBG) $(SRC)
 test: build
 	@$(CLEAR_SCREEN)
 	@cp $(BIN) $(TESTS_DIR)
@@ -35,10 +38,12 @@ leaks: build
 	@cp $(BIN) $(TESTS_DIR)
 	@cd $(TESTS_DIR) && sh test_leak.sh
 	@rm -rf $(TESTS_DIR)/$(BIN)
-alpine: clean
-	bash $(TESTS_DIR)/alpine.sh
-valgrind: clean
-	bash $(TESTS_DIR)/valgrind.sh
+docker_alpine: clean
+	bash $(BUILD)/run_alpine.sh
+docker_ubuntu: clean
+	bash $(BUILD)/run_ubuntu.sh
+# docker_verter: clean
+# 	cd ../../materials/build/ && bash run.sh
 style: build add_clang
 	@$(CLEAR_SCREEN)
 	clang-format -n *.[ch]

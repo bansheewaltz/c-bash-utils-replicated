@@ -1,6 +1,6 @@
 FROM ubuntu
 
-WORKDIR /home/usr/src
+WORKDIR /usr/src
 
 RUN apt-get update && \
     apt-get -y install gcc \ 
