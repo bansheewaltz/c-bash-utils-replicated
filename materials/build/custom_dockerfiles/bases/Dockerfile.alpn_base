@@ -1,6 +1,6 @@
 FROM alpine
 
-WORKDIR /usr/src
+WORKDIR /usr/project
 
 RUN apk --no-cache add gcc \
     valgrind \
@@ -8,8 +8,3 @@ RUN apk --no-cache add gcc \
     musl-dev \
     vim \
     bash
-
-
-COPY src/cat .
-
-# CMD [ "make", "build_check" ]

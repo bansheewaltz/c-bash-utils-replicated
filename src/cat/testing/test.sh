@@ -2,17 +2,19 @@
 ### script for functional_testing all combinations of test_options ###
 
 # option set presets
-cat_macOS="-b -e -n -s -t -v"
+cat_stripped="-b -e -n -t -v"
+cat_macOS_regular="-b -e -n -s -t -v"
+cat_macOS_inscript_compatible="-b -e -n -s -t -v --number --squeeze-blank --number-nonblank"
 cat_GNU="-b -e -n -s -t -v -E -T --number --squeeze-blank --number-nonblank"
 
 ##### USER DEFINED TESTING PARAMETERS
 utility="cat"
-options_set=$cat_GNU
+options_set=$cat_stripped
 test_file="test_case_cat.txt" # multiple files could be set
+dynamic_analyzer="valgrind"
 # exec 2>/dev/null               # *Turn on/off by (un)commenting to suppress stderror output during the functional_testing*
 opt_substitute_options="false" # substitute some of non-compatible macOS options
 opt_cleanup_nonlegit="false"   # cleanup log file with failed cases by deleting non-legit macOS options
-opt_valgrind="true"
 ### paths
 testing_dir="./data_samples"
 logs_dir="./logs"
@@ -23,8 +25,14 @@ succeeded_log="succeeded_cases.log"
 # automatic settings applying
 if [[ "$OSTYPE" == "darwin"* ]]; then
   opt_substitute_options="true"
+  options_set=$cat_macOS_inscript_compatible
   opt_cleanup_nonlegit="true"
-  opt_valgrind="false"
+  dynamic_analyzer="leaks"
+elif [ -f /etc/os-release ]; then
+  . /etc/os-release
+  if [[ "$NAME" == "Ubuntu" ]]; then
+    options_set=$cat_GNU
+  fi
 fi
 # variables
 success_c=0
@@ -52,8 +60,8 @@ testname_len="${#test_file}"
 total_len=$((fw * 3 + 2 + 1 + 7 + 1 + options_len + 1 + testname_len))
 
 clean_nonlegit_log() {
-  sed -i '' '/-E/d' $logs_dir/$failed_log
-  sed -i '' '/-T/d' $logs_dir/$failed_log
+  sed -i '' '/-E/d' $logs_dir/$failed_log &>/dev/null
+  sed -i '' '/-T/d' $logs_dir/$failed_log &>/dev/null
 }
 
 combine_and_pass() {
@@ -94,7 +102,7 @@ print_record() {
 
 valgrind_testing() {
   local test_options="$@"
-  local test_path=${testing_dir}/${test_file}
+  local test_path=$testing_dir/$test_file
   local test_entry="$test_options $test_path"
   valgrind_args="valgrind --vgdb=no --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose"
   $valgrind_args ./$s21_utility $test_entry
@@ -142,16 +150,14 @@ print_result() {
       $(((total_len - output_len) / 2 + fw)) $fail_c $((fw)) $total_c "$failure_msg"
     local log_msg="you can check the failed cases in the \"$failed_log\" file"
     local log_msg_len="${#log_msg}"
-    printf "${ORN}%*s${REG}\n" \
+    printf "${ORN}%*s${REG}\n\n" \
       $(((total_len - log_msg_len) / 2 + log_msg_len)) "$log_msg"
-    echo
 
   else
     local msg_len="${#success_msg}"
     local output_len=$((msg_len + fw * 2 + 3 + 1))
-    printf "${GRN}%*d${REG}/%*d | %s\n" \
+    printf "${GRN}%*d${REG}/%*d | %s\n\n" \
       $(((total_len - output_len) / 2 + fw)) $success_c $((fw)) $total_c "$success_msg"
-    echo
   fi
 }
 
@@ -159,14 +165,16 @@ clear_screen() {
   printf "\ec"
 }
 
-### main sript
-clear_screen
-rm $logs_dir/{$failed_log,$succeeded_log}
+### the main sript
+rm $logs_dir/{$failed_log,$succeeded_log} &>/dev/null
 mkdir $logs_dir
+# clear_screen
+
 combine_and_pass $options_set
 print_result
+
 if [ "$opt_cleanup_nonlegit" == "true" ]; then
   clean_nonlegit_log
 fi
-rm $logs_dir/{$s21_log,$log}
+rm $logs_dir/{$s21_log,$log} &>/dev/null
 ###
