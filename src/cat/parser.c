@@ -3,44 +3,46 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "structs.h"
-#define BIN_NAME (argv[0] + 2)
+#include "error_outputs.h"
+#include "globals.h"
+#include "typedefs.h"
 
-static void validate_option(s_options *flags, char arg[], char **invalid_opt,
-                            int *invalid_len) {
-  if (*arg == '-' && *arg++) {
+static void validate_option(t_options *s_flags, char arg[], char **invalid_opt,
+                            int *invalid_opt_len) {
+  if (*arg == '-' && *++arg) {
     if (strcmp(arg, "number-nonblank") == 0) {
-      flags->opt_b_number_nonblank = true;
+      s_flags->opt_b_number_nonblank = true;
     } else if (strcmp(arg, "number") == 0) {
-      flags->opt_n_number_lines = true;
+      s_flags->opt_n_number_lines = true;
     } else if (strcmp(arg, "squeeze-blank") == 0) {
-      flags->opt_s_squeeze_blank = true;
+      s_flags->opt_s_squeeze_blank = true;
     } else {
       *invalid_opt = arg;
-      *invalid_len = -1;  // as string precision specifier sets no size limit
+      *invalid_opt_len = -1;
+      // as a string precision specifier sets no size limit
     }
   } else {
-    for (char *char_p = arg; !*invalid_opt && *char_p; ++char_p) {
-      if (*char_p == 'b') {
-        flags->opt_b_number_nonblank = true;
-      } else if (*char_p == 'e') {
-        flags->opt_E_show_EOLs = true;
-        flags->opt_v_show_nonprinting = true;
-      } else if (*char_p == 'E') {
-        flags->opt_E_show_EOLs = true;
-      } else if (*char_p == 'n') {
-        flags->opt_n_number_lines = true;
-      } else if (*char_p == 's') {
-        flags->opt_s_squeeze_blank = true;
-      } else if (*char_p == 't') {
-        flags->opt_T_show_tabs = true;
-        flags->opt_v_show_nonprinting = true;
-      } else if (*char_p == 'T') {
-        flags->opt_T_show_tabs = true;
-      } else if (*char_p == 'v') {
-        flags->opt_v_show_nonprinting = true;
+    for (char *ch = arg; !*invalid_opt && *ch; ++ch) {
+      if (*ch == 'b') {
+        s_flags->opt_b_number_nonblank = true;
+      } else if (*ch == 'e') {
+        s_flags->opt_E_show_EOLs = true;
+        s_flags->opt_v_show_nonprinting = true;
+      } else if (*ch == 'E') {
+        s_flags->opt_E_show_EOLs = true;
+      } else if (*ch == 'n') {
+        s_flags->opt_n_number_lines = true;
+      } else if (*ch == 's') {
+        s_flags->opt_s_squeeze_blank = true;
+      } else if (*ch == 't') {
+        s_flags->opt_T_show_tabs = true;
+        s_flags->opt_v_show_nonprinting = true;
+      } else if (*ch == 'T') {
+        s_flags->opt_T_show_tabs = true;
+      } else if (*ch == 'v') {
+        s_flags->opt_v_show_nonprinting = true;
       } else {
-        *invalid_opt = char_p;
+        *invalid_opt = ch;
       }
     }
   }
@@ -69,47 +71,31 @@ static void sort_argv(int argc, char *argv[], int *filename_was_given) {
   file_c ? (*filename_was_given = opt_c + 1) : 0;
 }
 
-static void options_conflict_resolution(s_options *flags) {
-  if (flags->opt_b_number_nonblank == true) {  // options сonflict resolution
-    flags->opt_n_number_lines = false;
+static void options_conflict_resolution(t_options *s_flags) {
+  if (s_flags->opt_b_number_nonblank == true) {
+    s_flags->opt_n_number_lines = false;
   }
 }
 
-static void print_error_illegal_option(char const *argv[], int invalid_len,
-                                       char *invalid_opt) {
-  fprintf(stderr, "%s: illegal option -- %.*s\n", BIN_NAME, invalid_len,
-          invalid_opt);
-  fprintf(stderr,
-          "usage: ./%s "
-          "[-[beEnstTv] | --[(number-nonblank)|(number)|(squeeze-blank)]] "
-          "[file...]\n",
-          BIN_NAME);
-}
-
-bool parse_options(int argc, char *argv[], s_options *flags,
+bool parse_options(int argc, char *argv[], t_options *s_flags,
                    int *filename_was_given) {
   char *invalid_opt = NULL;
-  int invalid_len = 1;  // assume that a chance of a short invalid option
-                        // occurrence is higher;
-  sort_argv(
-      argc, argv,
-      filename_was_given);  // in a case if there are some options
-                            // that were passed after filenames (GNU feature)
-  for (int arg_ndx = 1; arg_ndx < argc && *argv[arg_ndx] == '-' && !invalid_opt;
-       ++arg_ndx) {
-    validate_option(flags, ++argv[arg_ndx], &invalid_opt, &invalid_len);
+  int invalid_opt_len = 1;  // assume that a chance of a short invalid option
+                            // occurrence is higher;
+  sort_argv(argc, argv, filename_was_given);
+  // in a case if there are some options
+  // that were passed after filenames (GNU feature)
+  for (int arg_ndx = 1;                                          //
+       arg_ndx < argc && *argv[arg_ndx] == '-' && !invalid_opt;  //
+       ++arg_ndx) {                                              //
+    validate_option(s_flags, ++argv[arg_ndx], &invalid_opt, &invalid_opt_len);
   }
 
   if (!invalid_opt) {
-    options_conflict_resolution(flags);
+    options_conflict_resolution(s_flags);
   } else {
-    print_error_illegal_option((const char **)argv, invalid_len, invalid_opt);
+    print_error_illegal_option(invalid_opt_len, invalid_opt);
   }
 
   return invalid_opt ? false : true;
-}
-
-void print_error_no_file(char *argv[], int file_ndx) {
-  fprintf(stderr, "%s: %s: No such file or directory\n", BIN_NAME,
-          argv[file_ndx]);
 }

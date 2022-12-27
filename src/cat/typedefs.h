@@ -1,7 +1,9 @@
-#ifndef SRC_CAT_STRUCTS_H_
-#define SRC_CAT_STRUCTS_H_
+#ifndef SRC_CAT_TYPEDEFS_H_
+#define SRC_CAT_TYPEDEFS_H_
 
 #include <stdbool.h>
+
+typedef unsigned char uchar;
 
 typedef struct {
   bool opt_b_number_nonblank;
@@ -14,15 +16,15 @@ typedef struct {
   // bool opt_t_Tv_equiv; // redundant without OS detection
   bool opt_T_show_tabs;
   bool opt_v_show_nonprinting;
-} s_options;
+} t_options;
 
 typedef struct {
-  s_options *flags;
-  char cur_ch;
-  char prev_ch;
+  t_options *s_flags;
+  uchar cur_ch;
+  uchar prev_ch;
   int str_count;
   int empty_str_count;
   bool already_printed;
-} s_info;
+} t_info;
 
-#endif  // SRC_CAT_STRUCTS_H_#endif
+#endif  // SRC_CAT_TYPEDEFS_H_#endif

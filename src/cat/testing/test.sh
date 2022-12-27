@@ -1,63 +1,77 @@
 #!/bin/bash
-### script for functional_testing all combinations of test_options ###
+### script for automated testing of cli utilities ###
 
 # option set presets
-cat_stripped="-b -e -n -t -v"
+cat_stripped="-b -e -n -t -v" # for Linux Alpine and lets assume that for other no-names too
 cat_macOS_regular="-b -e -n -s -t -v"
 cat_macOS_inscript_compatible="-b -e -n -s -t -v --number --squeeze-blank --number-nonblank"
 cat_GNU="-b -e -n -s -t -v -E -T --number --squeeze-blank --number-nonblank"
 
-##### USER DEFINED TESTING PARAMETERS
+##### USER DEFINED GLOBAL TESTING PARAMETERS
 utility="cat"
 options_set=$cat_stripped
 test_file="test_case_cat.txt" # multiple files could be set
-dynamic_analyzer="valgrind"
-# exec 2>/dev/null               # *Turn on/off by (un)commenting to suppress stderror output during the functional_testing*
-opt_substitute_options="false" # substitute some of non-compatible macOS options
-opt_cleanup_nonlegit="false"   # cleanup log file with failed cases by deleting non-legit macOS options
+dynamic_analyzer="valgrind"   # will be overwritten based on OS type
+### optional macOS only parameters
+opt_substitute_nonlegit_options="false"  # substitute some of the non-compatible macOS options
+opt_cleanup_nonlegit_options_log="false" # cleanup the log file with failed cases by deleting the non-legit macOS options
 ### paths
-testing_dir="./data_samples"
+testing_dir="./test_files"
 logs_dir="./logs"
 failed_log="failed_cases.log"
 succeeded_log="succeeded_cases.log"
+### messages
+summary_appeal="DUDE..."
+summary_success_msg="${summary_appeal} ЦЕ ДУЖЕ ДОБРЕ"
+summary_failure_msg="${summary_appeal} КРАЩЕ Б ТОБІ ЦЕ ПОЛАГОДИТИ"
+summary_delim=" | "
+summary_log_msg="you can check the failed cases in the \"$failed_log\" file"
 #####
 
-# automatic settings applying
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  opt_substitute_options="true"
-  options_set=$cat_macOS_inscript_compatible
-  opt_cleanup_nonlegit="true"
-  dynamic_analyzer="leaks"
-elif [ -f /etc/os-release ]; then
-  . /etc/os-release
-  if [[ "$NAME" == "Ubuntu" ]]; then
-    options_set=$cat_GNU
-  fi
-fi
 # variables
-success_c=0
-fail_c=0
-total_c=0
-s21_utility="s21_$utility"
+c_success=0
+c_failure=0
+c_processed=0
+target_utility="s21_$utility"
 log="test_$utility.tmp"
-s21_log="test_$s21_utility.tmp"
+s21_log="test_$target_utility.tmp"
 # colours
-# RED=$(tput setaf 1)
-# GRN=$(tput setaf 2)
-# REG=$(tput sgr0)
-### portable colours
 RED="\033[38;5;203m"
 GRN="\033[38;5;106m"
 ORN="\033[38;5;179m"
 REG="\033[0m"
-# automatic formatting parameters
-options_array=($options_set)
-number_of_options="${#options_array[@]}"
-number_of_combinations=$((1 << $number_of_options))
-fw="${#number_of_combinations}" # field width for number columns
-options_len="${#options_set}"
-testname_len="${#test_file}"
-total_len=$((fw * 3 + 2 + 1 + 7 + 1 + options_len + 1 + testname_len))
+
+apply_automatic_formatting_calculations() {
+  options_array=($options_set)
+  number_of_options="${#options_array[@]}"
+  number_of_combinations=$((1 << $number_of_options))
+  fw="${#number_of_combinations}" # field width for number columns
+  options_len="${#options_set}"
+  testname_len="${#test_file}"
+  summray_log_msg_len="${#summary_log_msg}"
+  delim_len="${#summary_delim}"
+  result_record_len=$((fw * 3 + 2 + 1 + 7 + 1 + options_len + 1 + testname_len))
+  total_len=$result_record_len
+  record_shift=0
+  if [ $summray_log_msg_len -ge $total_len ]; then
+    total_len=$((summray_log_msg_len + 6))
+    record_shift=$(((total_len - result_record_len) / 2))
+  fi
+}
+
+apply_automatic_OS_based_settings() {
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    opt_substitute_nonlegit_options="true"
+    options_set=$cat_macOS_inscript_compatible
+    opt_cleanup_nonlegit_options_log="true"
+    dynamic_analyzer="leaks"
+  elif [ -f /etc/os-release ]; then
+    . /etc/os-release
+    if [[ "$NAME" == "Ubuntu" ]]; then
+      options_set=$cat_GNU
+    fi
+  fi
+}
 
 clean_nonlegit_log() {
   sed -i '' '/-E/d' $logs_dir/$failed_log &>/dev/null
@@ -75,7 +89,7 @@ combine_and_pass() {
     # if [ "$opt_valgrind" == "true" ]; then
     #   valgrind_testing "${parts[@]}"
     # fi
-    functional_testing "${parts[@]}"
+    automated_testing "${parts[@]}"
   done
 }
 
@@ -96,8 +110,8 @@ print_record() {
   else
     color=$GRN
   fi
-  printf "${RED}%0${fw}d${REG}/${GRN}%0${fw}d${REG}/%0${fw}d ${color}%7s${REG} %-${options_len}s %s\n" \
-    $fail_c $success_c $total_c $1 "$test_options" "$test_file"
+  printf "%*s${RED}%0${fw}d${REG}/${GRN}%0${fw}d${REG}/%0${fw}d ${color}%7s${REG} %-${options_len}s %s\n" \
+    $record_shift "" $c_failure $c_success $c_processed $1 "$test_options" $2
 }
 
 valgrind_testing() {
@@ -105,59 +119,55 @@ valgrind_testing() {
   local test_path=$testing_dir/$test_file
   local test_entry="$test_options $test_path"
   valgrind_args="valgrind --vgdb=no --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose"
-  $valgrind_args ./$s21_utility $test_entry
+  $valgrind_args ./$target_utility $test_entry
 
 }
 
-functional_testing() {
+automated_testing() {
   local test_options="$@"
   local test_path=${testing_dir}/${test_file}
   local test_entry="$test_options $test_path"
 
-  ./$s21_utility $test_entry >$logs_dir/$s21_log
-  if [ "$opt_substitute_options" == "true" ]; then
-    substitute_nonvalid_options
-  else
-    sys_test_entry=$test_entry
-  fi
+  ./$target_utility $test_entry >$logs_dir/$s21_log
+  if_opt_then_substitue_nonlegit_options
   $utility $sys_test_entry >$logs_dir/$log
 
   local diff_res="$(diff -s $logs_dir/$s21_log $logs_dir/$log)"
-  ((total_c++))
+  ((c_processed++))
   if [ "$diff_res" == "Files $logs_dir/$s21_log and $logs_dir/$log are identical" ]; then
-    ((success_c++))
-    print_record "SUCCESS"
+    ((c_success++))
+    print_record "SUCCESS" $test_file
     printf "%s %s\n" "$test_options" "$test_file" >>$logs_dir/$succeeded_log
   else
-    ((fail_c++))
-    print_record "FAILURE"
+    ((c_failure++))
+    print_record "FAILURE" $test_file
     printf "%s %s\n" "$test_options" "$test_file" >>$logs_dir/$failed_log
   fi
 }
 
-print_result() {
-  local appeal="DUDE..."
-  local success_msg="${appeal} ЦЕ ДУЖЕ ДОБРЕ"
-  local failure_msg="${appeal} КРАЩЕ Б ТОБІ ЦЕ ПОЛАГОДИТИ"
-  local delim=" | "
-  local delim_len="${#delim}"
-
+print_summary() {
   printf "%${total_len}s\n" | tr " " "-"
-  if [ "$fail_c" -gt 0 ]; then
-    local msg_len="${#failure_msg}"
+  printf "${ORN}RESULTS FOR THE SET OF OPTIONS: $options_set${REG}\n"
+  printf "%${total_len}s\n" | tr " " "-"
+  if [ "$c_failure" -gt 0 ]; then
+    local msg_len=${#summary_failure_msg}
     local output_len=$((msg_len + fw * 2 + 3 + 1))
     printf "${RED}%*d${REG}/%*d | %s\n" \
-      $(((total_len - output_len) / 2 + fw)) $fail_c $((fw)) $total_c "$failure_msg"
-    local log_msg="you can check the failed cases in the \"$failed_log\" file"
-    local log_msg_len="${#log_msg}"
+      $(((total_len - output_len) / 2 + fw)) $c_failure $fw $c_processed "$summary_failure_msg"
     printf "${ORN}%*s${REG}\n\n" \
-      $(((total_len - log_msg_len) / 2 + log_msg_len)) "$log_msg"
+      $(((total_len - summray_log_msg_len) / 2 + summray_log_msg_len)) "$summary_log_msg"
 
   else
-    local msg_len="${#success_msg}"
+    local msg_len="${#summary_success_msg}"
     local output_len=$((msg_len + fw * 2 + 3 + 1))
     printf "${GRN}%*d${REG}/%*d | %s\n\n" \
-      $(((total_len - output_len) / 2 + fw)) $success_c $((fw)) $total_c "$success_msg"
+      $(((total_len - output_len) / 2 + fw)) $c_success $((fw)) $c_processed "$summary_success_msg"
+  fi
+}
+
+if_opt_then_cleanup_nonlegit() {
+  if [ "$opt_cleanup_nonlegit_options_log" == "true" ]; then
+    clean_nonlegit_log
   fi
 }
 
@@ -165,16 +175,63 @@ clear_screen() {
   printf "\ec"
 }
 
-### the main sript
-rm $logs_dir/{$failed_log,$succeeded_log} &>/dev/null
-mkdir $logs_dir
-# clear_screen
+prepare_log_dir() {
+  rm $logs_dir/{$failed_log,$succeeded_log} &>/dev/null
+  mkdir $logs_dir &>/dev/null
+}
+
+clear_temp_files() {
+  if_opt_then_cleanup_nonlegit
+  rm $logs_dir/{$s21_log,$log} &>/dev/null
+}
+
+if_opt_then_substitue_nonlegit_options() {
+  if [ "$opt_substitute_nonlegit_options" == "true" ]; then
+    substitute_nonvalid_options
+  else
+    sys_test_entry=$test_entry
+  fi
+}
+
+handwritten_entries_test() {
+  local test_file=$testing_dir/handwritten_entries.txt
+  local c_processed=1
+  local c_success=0
+  local c_failure=0
+
+  printf "%${total_len}s\n" | tr " " "-"
+  printf "${ORN}TESTING WITH THE HADWRITTEN ENTRIES:${REG}\n"
+  printf "%${total_len}s\n" | tr " " "-"
+  while read test_entry; do
+    ./$target_utility $test_entry >$logs_dir/$s21_log
+    if_opt_then_substitue_nonlegit_options
+    $utility $sys_test_entry >$logs_dir/$log
+
+    local diff_res="$(diff -s $logs_dir/$s21_log $logs_dir/$log)"
+    test_options=$test_entry
+    ((c_processed++))
+    if [ "$diff_res" == "Files $logs_dir/$s21_log and $logs_dir/$log are identical" ]; then
+      ((c_success++))
+      print_record "SUCCESS"
+    else
+      ((c_failure++))
+      print_record "FAILURE"
+      printf "%s %s\n" "$test_options" "$test_file" >>$logs_dir/$failed_log
+    fi
+  done <$test_file
+}
+
+### THE MAIN SCRIPT
+clear_screen
+apply_automatic_OS_based_settings
+# options_set=$cat_stripped
+apply_automatic_formatting_calculations
+prepare_log_dir
 
 combine_and_pass $options_set
-print_result
+print_summary
+exec 2>/dev/null # *Turn on/off by (un)commenting to suppress stderror output*
+handwritten_entries_test
 
-if [ "$opt_cleanup_nonlegit" == "true" ]; then
-  clean_nonlegit_log
-fi
-rm $logs_dir/{$s21_log,$log} &>/dev/null
+clear_temp_files
 ###

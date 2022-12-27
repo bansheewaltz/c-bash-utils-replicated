@@ -3,8 +3,8 @@
 
 #include <stdio.h>
 
-#include "structs.h"
+#include "typedefs.h"
 
-void process_text(FILE *file_p, s_options *flags);
+void process_text(FILE *file_p, t_options *flags);
 
 #endif  // SRC_CAT_PROCESSOR_H_

@@ -2,93 +2,114 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "structs.h"
+#include "error_outputs.h"
+#include "typedefs.h"
 #define ASCII_SHIFT 64
-#define ASCII_SHIFT_BOUND 126
+#define ASCII_BOUND 127
 
-static bool condition_show_nonprinting(s_info *info) {
-  unsigned char ch = (unsigned char)info->cur_ch;
-  return (info->flags->opt_v_show_nonprinting &&
-          info->already_printed == false) &&
-         (!isgraph(ch) && ch != '\n' && ch != '\t' && ch != ' ');
+static bool condition_show_nonprinting(t_info *s_info) {
+  uchar ch = s_info->cur_ch;
+  return 1                                           //
+         && s_info->s_flags->opt_v_show_nonprinting  //
+         && s_info->already_printed == false         //
+         && !isgraph(ch)                             //
+         && !isblank(ch)                             //
+         && ch != '\n';                              //
 }
 
-static void show_nonprinting(s_info *info) {
-  unsigned char ch = (unsigned char)info->cur_ch;
-  ch < ASCII_SHIFT_BOUND ? (ch += ASCII_SHIFT) : (ch -= ASCII_SHIFT);
+static void show_nonprinting(t_info *s_info) {
+  uchar ch = s_info->cur_ch;
+
+  ch < ASCII_BOUND ? (ch += ASCII_SHIFT) : (ch -= ASCII_SHIFT);
   printf("^%c", ch);
-  info->already_printed = true;
-  info->cur_ch = (char)ch;
+  s_info->already_printed = true;
+  s_info->cur_ch = ch;
 }
 
-static bool condition_show_EOLs(s_info *info) {
-  return (info->flags->opt_E_show_EOLs && info->already_printed == false) &&
-         (info->cur_ch == '\n');
+static bool condition_show_EOLs(t_info *s_info) {
+  return 1                                    //
+         && s_info->s_flags->opt_E_show_EOLs  //
+         && s_info->already_printed == false  //
+         && (s_info->cur_ch == '\n');         //
 }
 
-static void show_EOLs(s_info *info) {
-  if (info->prev_ch == '\n' && info->flags->opt_b_number_nonblank) {
+static void show_EOLs(t_info *s_info) {
+  if (s_info->prev_ch == '\n' && s_info->s_flags->opt_b_number_nonblank) {
+#ifndef __UBUNTU__
     printf("%*.0s\t", 6, "");
+#endif
   }
   putchar('$');
 }
 
-static bool condition_show_tabs(s_info *info) {
-  return (info->flags->opt_T_show_tabs && info->already_printed == false) &&
-         (info->cur_ch == '\t');
+static bool condition_show_tabs(t_info *s_info) {
+  return 1                                    //
+         && s_info->s_flags->opt_T_show_tabs  //
+         && s_info->already_printed == false  //
+         && (s_info->cur_ch == '\t');         //
 }
 
-static void show_tabs(s_info *info) {
+static void show_tabs(t_info *s_info) {
   fputs("^I", stdout);
-  info->already_printed = true;
+  s_info->already_printed = true;
 }
 
-static void squeeze_blank(s_info *info) {
-  if (info->cur_ch == '\n' && info->prev_ch == '\n') {
-    info->empty_str_count++;
-    if (info->empty_str_count > 1) {
-      info->already_printed = true;
+static void squeeze_blank(t_info *s_info) {
+  if (s_info->cur_ch == '\n' && s_info->prev_ch == '\n') {
+    s_info->empty_str_count++;
+    if (s_info->empty_str_count > 1) {
+      s_info->already_printed = true;
     }
   } else {
-    info->empty_str_count = 0;
+    s_info->empty_str_count = 0;
   }
 }
 
-static bool condition_number_lines(s_info *info) {
-  return info->prev_ch == '\n' && info->already_printed == false &&
-         ((info->flags->opt_b_number_nonblank && info->cur_ch != '\n') ||
-          info->flags->opt_n_number_lines);
+static bool condition_number_lines(t_info *s_info) {
+  return 1                                               //
+         && s_info->prev_ch == '\n'                      //
+         && s_info->already_printed == false             //
+         && (s_info->s_flags->opt_n_number_lines         //
+             || (s_info->s_flags->opt_b_number_nonblank  //
+                 && s_info->cur_ch != '\n'));            //
 }
 
-static void number_lines(s_info *info) { printf("%6d\t", info->str_count++); }
+static void number_lines(t_info *s_info) {
+  printf("%6d\t", s_info->str_count++);
+}
 
-void process_text(FILE *file_p, s_options *flags) {
-  s_info info = {.str_count = 1, .prev_ch = '\n', .flags = flags};
+void process_text(FILE *p_file, t_options *s_flags) {
+  t_info s_info = {.str_count = 1, .prev_ch = '\n', .s_flags = s_flags};
 
-  while ((signed char)(info.cur_ch = getc(file_p)) != EOF) {
-    info.already_printed = false;
-    if (isgraph(info.cur_ch) && info.prev_ch != '\n') {
-      putchar(info.cur_ch);
+  while ((char)(s_info.cur_ch = getc(p_file)) != EOF) {
+    s_info.already_printed = false;
+    if (isgraph(s_info.cur_ch) && s_info.prev_ch != '\n') {
+      putchar(s_info.cur_ch);
     } else {
-      if (flags->opt_s_squeeze_blank) {
-        squeeze_blank(&info);
+      if (s_flags->opt_s_squeeze_blank) {
+        squeeze_blank(&s_info);
       }
-      if (condition_number_lines(&info)) {
-        number_lines(&info);
+      if (condition_number_lines(&s_info)) {
+        number_lines(&s_info);
       }
-      if (condition_show_tabs(&info)) {
-        show_tabs(&info);
+      if (condition_show_tabs(&s_info)) {
+        show_tabs(&s_info);
       }
-      if (condition_show_EOLs(&info)) {
-        show_EOLs(&info);
+      if (condition_show_EOLs(&s_info)) {
+        show_EOLs(&s_info);
       }
-      if (condition_show_nonprinting(&info)) {
-        show_nonprinting(&info);
+      if (condition_show_nonprinting(&s_info)) {
+        show_nonprinting(&s_info);
       }
-      if (info.already_printed == false) {
-        putchar(info.cur_ch);
+      if (s_info.already_printed == false) {
+        putchar(s_info.cur_ch);
       }
     }
-    info.prev_ch = info.cur_ch;
+    s_info.prev_ch = s_info.cur_ch;
   }
+#ifdef __ALPINE__
+  if (s_flags->opt_b_number_nonblank) {
+    puts("");
+  }
+#endif
 }
