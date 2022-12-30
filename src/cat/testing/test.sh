@@ -6,9 +6,12 @@ cat_stripped="-b -e -n -t -v" # for Linux Alpine and lets assume that for other 
 cat_macOS_regular="-b -e -n -s -t -v"
 cat_macOS_inscript_compatible="-b -e -n -s -t -v --number --squeeze-blank --number-nonblank"
 cat_GNU="-b -e -n -s -t -v -E -T --number --squeeze-blank --number-nonblank"
+grep="-i -v -c -l -n -h -s -o \"print\""
 
 ##### USER DEFINED GLOBAL TESTING PARAMETERS
-utility="cat"
+# utility="cat" # is passed by shell variable
+prefix="s21_"
+target_utility="../${prefix}${utility}"
 options_set=$cat_stripped
 test_file="test_case_cat.txt" # multiple files could be set
 dynamic_analyzer="valgrind"   # will be overwritten based on OS type
@@ -32,9 +35,8 @@ summary_log_msg="you can check the failed cases in the \"$failed_log\" file"
 c_success=0
 c_failure=0
 c_processed=0
-target_utility="s21_$utility"
 log="test_$utility.tmp"
-s21_log="test_$target_utility.tmp"
+target_log="test_$prefix$utility.tmp"
 # colours
 RED="\033[38;5;203m"
 GRN="\033[38;5;106m"
@@ -119,7 +121,7 @@ valgrind_testing() {
   local test_path=$testing_dir/$test_file
   local test_entry="$test_options $test_path"
   valgrind_args="valgrind --vgdb=no --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose"
-  $valgrind_args ./$target_utility $test_entry
+  $valgrind_args ../$target_utility $test_entry
 
 }
 
@@ -128,13 +130,13 @@ automated_testing() {
   local test_path=${testing_dir}/${test_file}
   local test_entry="$test_options $test_path"
 
-  ./$target_utility $test_entry >$logs_dir/$s21_log
+  $target_utility $test_entry >$logs_dir/$target_log
   if_opt_then_substitue_nonlegit_options
   $utility $sys_test_entry >$logs_dir/$log
 
-  local diff_res="$(diff -s $logs_dir/$s21_log $logs_dir/$log)"
+  local diff_res="$(diff -s $logs_dir/$target_log $logs_dir/$log)"
   ((c_processed++))
-  if [ "$diff_res" == "Files $logs_dir/$s21_log and $logs_dir/$log are identical" ]; then
+  if [ "$diff_res" == "Files $logs_dir/$target_log and $logs_dir/$log are identical" ]; then
     ((c_success++))
     print_record "SUCCESS" $test_file
     printf "%s %s\n" "$test_options" "$test_file" >>$logs_dir/$succeeded_log
@@ -182,7 +184,7 @@ prepare_log_dir() {
 
 clear_temp_files() {
   if_opt_then_cleanup_nonlegit
-  rm $logs_dir/{$s21_log,$log} &>/dev/null
+  rm $logs_dir/{$target_log,$log} &>/dev/null
 }
 
 if_opt_then_substitue_nonlegit_options() {
@@ -203,14 +205,14 @@ handwritten_entries_test() {
   printf "${ORN}TESTING WITH THE HADWRITTEN ENTRIES:${REG}\n"
   printf "%${total_len}s\n" | tr " " "-"
   while read test_entry; do
-    ./$target_utility $test_entry >$logs_dir/$s21_log
+    $target_utility $test_entry >$logs_dir/$target_log
     if_opt_then_substitue_nonlegit_options
     $utility $sys_test_entry >$logs_dir/$log
 
-    local diff_res="$(diff -s $logs_dir/$s21_log $logs_dir/$log)"
+    local diff_res="$(diff -s $logs_dir/$target_log $logs_dir/$log)"
     test_options=$test_entry
     ((c_processed++))
-    if [ "$diff_res" == "Files $logs_dir/$s21_log and $logs_dir/$log are identical" ]; then
+    if [ "$diff_res" == "Files $logs_dir/$target_log and $logs_dir/$log are identical" ]; then
       ((c_success++))
       print_record "SUCCESS"
     else

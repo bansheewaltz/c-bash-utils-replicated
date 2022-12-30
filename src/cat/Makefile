@@ -46,9 +46,7 @@ compile_check: clean
 	$(CC) -o $(EXE) $(DBG) $(OS_MACRO) $(WFLAGS) $(STD) $(OPT) $(SRC)
 test: build
 	printf "\ec"
-	@cp $(EXE) $(DIR_TESTS)
-	@cd $(DIR_TESTS) && bash test.sh
-	@rm -rf $(DIR_TESTS)/$(EXE)
+	@cd $(DIR_TESTS) && utility=$(PROGRAM) bash test.sh
 leak: build # fast check
 	clear
 	@echo -e "\n"
@@ -69,7 +67,7 @@ check_headers_style:
 	bash $(DIR_SCRIPTS)/check_headers_style.sh
 	@echo
 clean:
-	@rm -rf {$(EXE),*.{out,log,dSYM,ntesting},*tmp*}
+	@rm -rf {$(EXE), logs,*.{out,log,dSYM,ntesting},*tmp*}
 	@rm -rf $(DIR_TESTS)/{$(EXE),*.{out,log,dSYM,ntesting},*tmp*,logs}
 	@rm -rf $(DIR_SRC)/.clang-format
 rebuild: re

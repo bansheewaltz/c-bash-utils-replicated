@@ -98,10 +98,11 @@ bool parse_options(int argc, char *argv[], t_options *s_flags,
     validate_option(s_flags, ++argv[arg_ndx], &invalid_opt, &invalid_opt_len);
   }
 
-  if (!invalid_opt)
+  if (!invalid_opt) {
     options_conflict_resolution(s_flags);
-  else
+  } else {
     print_error_illegal_option(invalid_opt_len, invalid_opt);
+  }
 
   return invalid_opt ? false : true;
 }

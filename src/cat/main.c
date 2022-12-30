@@ -1,5 +1,5 @@
 /* Realization of Unix[-like] "cat" utility based on macOS-specific version
-** with some GNU-specific features added.
+** with some GNU features added.
 ** Character by character processing approach */
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,13 +9,14 @@
 #include "parser.h"
 #include "processor.h"
 
+#define BUFFER_SIZE 4096
 #define FALSE_ALL_BOOLS {false};
 
 char const *g_PROGRAM_NAME;
 
 int main(int argc, char *argv[]) {
   t_options s_flags = FALSE_ALL_BOOLS;
-  int filename_was_given = false;  // will hold the name of the first file
+  int filename_was_given = false;  // will hold the argv index of the first file
   g_PROGRAM_NAME = argv[0] + 2;    // to omit "./"
 
   if (parse_options(argc, argv, &s_flags, &filename_was_given)) {
@@ -23,8 +24,10 @@ int main(int argc, char *argv[]) {
 
     if (filename_was_given == false) {
       p_file = stdin;
-      fputs("Interactive mode is on...\n\n", stderr);
       process_text(p_file, &s_flags);
+    } else {
+      static char output_buffer[BUFFER_SIZE];
+      setvbuf(stdout, output_buffer, _IOFBF, sizeof(output_buffer));
     }
 
     for (int file_ndx = filename_was_given; file_ndx != 0 && file_ndx < argc;

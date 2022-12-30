@@ -2,8 +2,8 @@
 		legacy_style clean rebuild re add_clang sign_code install uninstall
 
 SRC := s21_grep.c
-PROGRAM := grep
-PREFIX := s21_
+PROGRAM :=grep
+PREFIX :=s21_
 EXE := ${PREFIX}${PROGRAM}
 # compile options
 CC := gcc
@@ -49,9 +49,9 @@ test: build
 	@cd $(DIR_TESTS) && utility=$(PROGRAM) bash test.sh
 test1: build
 	printf "\ec"
-	cp s21* ./test_grep
-	@cd test_grep && bash test_func_grep.sh
-	rm ./test_grep/s21*
+	cp s21_grep ./test_grep
+	@cd test_grep && sh test_func_grep.sh
+	rm ./test_grep/s21_grep
 leak: build # fast check
 	clear
 	@echo -e "\n"
@@ -71,8 +71,6 @@ static_analysis:
 check_headers_style:
 	bash $(DIR_SCRIPTS)/check_headers_style.sh
 	@echo
-verter:
-	cd $(DIR_PROJ_ROOT)/materials/build/ && bash run.sh
 clean:
 	@rm -rf {$(EXE),logs,*.{out,log,dSYM,ntesting},*tmp*}
 	@rm -rf $(DIR_TESTS)/{$(EXE),*.{out,log,dSYM,ntesting},*tmp*,logs}
@@ -91,7 +89,7 @@ detect_os:
 add_clang:
 	-cp $(DIR_PROJ_ROOT)/materials/linters/.clang-format $(DIR_SRC)
 docker: clean
-	utility=$(PROGRAM) bash $(DIR_SCRIPTS)/run_dockerfile_image.sh $(image) $(goal)
+	bash $(DIR_SCRIPTS)/run_dockerfile_image.sh $(image) $(goal) $(DIR_DOCKERFILES)
 docker_prune:
 	yes | docker system prune -a
 install: build
