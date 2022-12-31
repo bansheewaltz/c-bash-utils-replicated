@@ -3,22 +3,6 @@
 #define SUCCESS 1
 #define FAIL 0
 
-int main(int argc, char *argv[]) {
-  if (argc < 3) {  // exe name + pattern[s] + file[s]
-    fputs("Not enough options\n", stderr);
-    return EXIT_FAILURE;
-  }
-
-  t_options s_flags = {0};
-  char patternE[BUFFER_SIZE] = {0};
-
-  if (parse_options(argc, argv, &s_flags, patternE)) {
-    grep(&s_flags, argc, argv, patternE);
-  }
-
-  return EXIT_SUCCESS;
-}
-
 int parse_options(int argc, char *argv[], t_options *s_flags, char *patternE) {
   for (int opt = 0; (opt = getopt(argc, argv, "e:ivclnhsf:o")) != -1;) {
     switch (opt) {
@@ -166,4 +150,20 @@ void grep(t_options *s_flags, int argc, char *argv[], char buff[]) {
       grep_file(s_flags, pattern, argv[i]);
     }
   }
+}
+
+int main(int argc, char *argv[]) {
+  if (argc < 3) {  // exe name + pattern[s] + file[s]
+    fputs("Not enough options\n", stderr);
+    return EXIT_FAILURE;
+  }
+
+  t_options s_flags = {0};
+  char patternE[BUFFER_SIZE] = {0};
+
+  if (parse_options(argc, argv, &s_flags, patternE)) {
+    grep(&s_flags, argc, argv, patternE);
+  }
+
+  return EXIT_SUCCESS;
 }
