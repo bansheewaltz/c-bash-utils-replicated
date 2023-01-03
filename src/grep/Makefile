@@ -15,8 +15,8 @@ D_DEBUG := -D DEBUG
 # D_GNU_SRC := -D _GNU_SOURCE
 STD := -std=c11
 OPT := -O2
-ASAN := -fsanitize=address #-fstack-protector-all -fsanitize=pointer-compare \
-        -fsanitize=pointer-subtract -fsanitize=leak
+DFLAGS := -fsanitize=address -fno-omit-frame-pointer -fstack-protector-all -fsanitize=pointer-compare \
+          -fsanitize=pointer-subtract -fsanitize=leak -fsanitize=undefined -fsanitize=bounds-strict
 # paths
 DIR_PROJ_ROOT := ../..
 DIR_SRC := ..
@@ -62,11 +62,16 @@ check:
 	$(MAKE) add_clang
 	$(MAKE) build_compile_check
 build_compile_check:
-	$(CC) -o $(EXE) $(DEBUG_INFO) $(OS_MACRO) $(WFLAGS) $(STD) $(ASAN) $(SRC)
+	$(CC) -o $(EXE) $(DEBUG_INFO) $(OS_MACRO) $(WFLAGS) $(STD) $(DFLAGS) $(SRC)
 test: build
 	printf "\ec"
 	@cd $(DIR_TESTS) && utility=$(PROGRAM) bash test.sh
 test1: build
+	printf "\ec"
+	cp Makefile s21* ./test_grep
+	@cd test_grep && bash test_func_grep.sh
+	rm ./test_grep/s21*
+asan: check
 	printf "\ec"
 	cp Makefile s21* ./test_grep
 	@cd test_grep && bash test_func_grep.sh

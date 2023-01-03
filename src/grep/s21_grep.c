@@ -1,7 +1,8 @@
-/* grep utility program realized with static array of patterns
-** combination of patterns implemented as one cumulative array of pattern
-** strings by delimiting singular patterns with pipe symbol '|' (the GNU way)
-** tests output matches Ubuntu grep utility */
+/* grep utility program
+** * realized with static array of patterns
+** * combination of patterns implemented as one cumulative array of pattern
+**   strings by delimiting singular patterns with pipe symbol '|' (the GNU way)
+** * tests output matches Ubuntu grep utility */
 #define _GNU_SOURCE
 #include <errno.h>
 #include <getopt.h>
@@ -216,6 +217,7 @@ void scan_file(FILE *file, char *filename, t_options *flags, regex_t *regex,
 
   while (getline(&line, &len, file) > 0) {
     ++line_ndx;
+
     int result = regexec(regex, line, 1, &regmatch, 0);
     if ((result == SUCCESS && !flags->v) ||     //
         (result == REG_NOMATCH && flags->v)) {  //
