@@ -1,6 +1,7 @@
 .PHONY: build build_functional debug build_debug check build_compile_check \
 		test test1 leak leaks style static linter verter clean rebuild re  \
-		os_info add_clang docker docker_prune install uninstall sign_code
+		os_info add_clang docker docker_prune install uninstall sign_code  \
+		gitignore
 
 SRC := s21_grep.c
 PROGRAM := grep
@@ -65,7 +66,7 @@ build_compile_check:
 test: build
 	printf "\ec"
 	@cd $(DIR_TESTS) && utility=$(PROGRAM) bash test.sh
-test1: check
+test1: build
 	printf "\ec"
 	cp Makefile s21* ./test_grep
 	@cd test_grep && bash test_func_grep.sh
@@ -85,11 +86,12 @@ style: build add_clang
 	clang-format -i *.[ch]
 	$(MAKE) linter
 static:
-	echo \t; cppcheck --enable=all --suppress=missingIncludeSystem *.[ch]
+	echo; cppcheck --enable=all --suppress=missingIncludeSystem *.[ch]
 linter:
 	bash $(DIR_SCRIPTS)/check_headers_style.sh
 	@echo
 verter:
+	printf "\ec"
 	$(MAKE) clean
 	$(MAKE) -C ../cat/ clean
 	cd $(DIR_PROJ_ROOT)/materials/build/ && bash run.sh
@@ -108,6 +110,13 @@ os_info:
 	@echo NAME=${NAME}
 	@echo INTERNAL_NAME=${OS}
 	@echo MACRO=${OS_MACRO}
+gitignore:
+	@echo -e '\
+	*\n\
+	!*.[ch]\n\
+	!Makefiie' > .gitignore
+	@echo -e ".gitignore:\n"
+	@cat .gitignore
 add_clang:
 	-cp $(DIR_PROJ_ROOT)/materials/linters/.clang-format $(DIR_SRC)
 docker: clean

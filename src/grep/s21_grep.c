@@ -1,7 +1,7 @@
-// grep utility program realized with static array of patterns
-// combination of patterns implemented as one cumulative array of pattern
-// strings by delimiting singular patterns with pipe symbol '|' (the GNU way)
-// tests output matches Ubuntu grep utility
+/* grep utility program realized with static array of patterns
+** combination of patterns implemented as one cumulative array of pattern
+** strings by delimiting singular patterns with pipe symbol '|' (the GNU way)
+** tests output matches Ubuntu grep utility */
 #define _GNU_SOURCE
 #include <errno.h>
 #include <getopt.h>
@@ -175,55 +175,35 @@ void line_related_output(char *line, t_options *flags, regmatch_t *regmatch,
   }
 }
 
-void strslice(const char *str, char *result, size_t slice_len, size_t start,
-              size_t end) {
-  memset(result, '\0', slice_len);
-  strncpy(result, str + start, end - start);
-}
-
-bool pattern_is_dot(t_info *pattern_info) {
+bool is_pattern_dot(t_info *pattern_info) {
   char *str = pattern_info->str;
   size_t len = strlen(str);
+  char *pattern = ".";
 
-  if (len == 1 && str[0] == '.') {
+  // dot only
+  if (len == 1 && str[0] == *pattern) {
+    return true;
+  }
+  // begginning of the cumulative pattern string
+  pattern = ".\\|";
+  if (strstr(str, pattern) != NULL) {
+    return true;
+  }
+  // end of the string
+  pattern = "|.";
+  if (strstr(str, pattern) != NULL) {
+    return true;
+  }
+  // somewhere in the middle
+  pattern = "|.\\|";
+  if (strstr(str, pattern) != NULL) {
     return true;
   }
 
-  bool result = false;
-  const size_t slice_len = 8;
-  char *slice = (char *)malloc(sizeof(char) * slice_len);
-  // check begginning of the string
-  char *pattern = ".\\|";
-  strslice(str, slice, slice_len, 0, strlen(pattern));
-  if (strcmp(slice, pattern) == 0) {
-    result = true;
-  }
-  // in the end
-  if (result == false) {
-    pattern = "|.";
-    strslice(str, slice, slice_len, len - strlen(pattern), len);
-    if (strcmp(slice, pattern) == 0) {
-      result = true;
-    }
-  }
-  // somewhere in the middle
-  if (result == false) {
-    for (int i = 1; i + strlen(pattern) < len; ++i) {
-      pattern = "|.\\|";
-      strslice(str, slice, slice_len, i, i + strlen(pattern));
-      if (strcmp(slice, pattern) == 0) {
-        result = true;
-      }
-    }
-  }
-
-  free(slice);
-  return result;
+  return false;
 }
 
-bool line_empty(char *line) {
-  return strlen(line) == 1 && line[0] == '\n';
-}
+bool is_line_empty(char *line) { return strlen(line) == 1 && line[0] == '\n'; }
 
 void scan_file(FILE *file, char *filename, t_options *flags, regex_t *regex,
                t_info *pattern_info) {
@@ -232,23 +212,22 @@ void scan_file(FILE *file, char *filename, t_options *flags, regex_t *regex,
   regmatch_t regmatch;
   int matched_n = 0;
   int line_ndx = 0;  // +1 -- human readable
-  bool dot_pattern = pattern_is_dot(pattern_info);
+  bool dot_pattern = is_pattern_dot(pattern_info);
 
   while (getline(&line, &len, file) > 0) {
     ++line_ndx;
     int result = regexec(regex, line, 1, &regmatch, 0);
-    if ((result == SUCCESS && !flags->v) ||         //
-        (result == REG_NOMATCH && flags->v)) {      //
-      if (0                                         //
-          || !dot_pattern                           //
-          || (dot_pattern && !line_empty(line))) {  //
+    if ((result == SUCCESS && !flags->v) ||     //
+        (result == REG_NOMATCH && flags->v)) {  //
+      bool line_empty = is_line_empty(line);
+      if (!dot_pattern || !line_empty) {
         matched_n++;
       }
-      if (0                                        //
-          || flags->l                              //
-          || flags->c                              //
-          || (flags->v && flags->o)                //
-          || (dot_pattern && line_empty(line))) {  //
+      if (0                                  //
+          || flags->l                        //
+          || flags->c                        //
+          || (flags->v && flags->o)          //
+          || (dot_pattern && line_empty)) {  //
         continue;
       }
       line_related_output(line, flags, &regmatch, line_ndx, filename);
@@ -261,6 +240,7 @@ void scan_file(FILE *file, char *filename, t_options *flags, regex_t *regex,
       }
     }
   }
+  free(line);
 
   if (flags->c) {
     if (flags->show_filenames) {
@@ -270,7 +250,6 @@ void scan_file(FILE *file, char *filename, t_options *flags, regex_t *regex,
   } else if (flags->l && matched_n) {
     printf("%s\n", filename);
   }
-  free(line);
 }
 
 void cook_search(int argc, char *argv[], t_options *flags,
@@ -304,9 +283,7 @@ void cook_search(int argc, char *argv[], t_options *flags,
   regfree(&regex);
 }
 
-bool file_is_specified(int argc) {
-  return optind < argc;
-}
+bool file_is_specified(int argc) { return optind < argc; }
 
 void add_argv_pattern(char *argv[], t_info *pattern_info) {
   memcpy(pattern_info->str, argv[optind], strlen(argv[optind]));
@@ -320,9 +297,7 @@ bool arguments_are_enough(int argc, t_info *pattern_info) {
          ((argc - optind >= 1) && !pattern_info->pattern_specified);
 }
 
-bool more_than_one_file(int argc) {
-  return argc - optind > 1;
-}
+bool more_than_one_file(int argc) { return argc - optind > 1; }
 
 void options_combination_resolution(int argc, t_options *flags) {
   if (more_than_one_file(argc) && !flags->h) {

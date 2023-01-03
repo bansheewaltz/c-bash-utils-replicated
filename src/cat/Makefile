@@ -67,7 +67,7 @@ check_headers_style:
 	bash $(DIR_SCRIPTS)/check_headers_style.sh
 	@echo
 clean:
-	@rm -rf {$(EXE), logs,*.{out,log,dSYM,ntesting},*tmp*}
+	@rm -rf {$(EXE),logs,*.{out,log,dSYM,ntesting},*tmp*}
 	@rm -rf $(DIR_TESTS)/{$(EXE),*.{out,log,dSYM,ntesting},*tmp*,logs}
 	@rm -rf $(DIR_SRC)/.clang-format
 rebuild: re

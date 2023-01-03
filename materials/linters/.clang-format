@@ -1,4 +1,4 @@
 ---
 BasedOnStyle: Google
-AllowShortIfStatementsOnASingleLine: Never
-AllowShortFunctionsOnASingleLine: None
+# AllowShortIfStatementsOnASingleLine: Never
+# AllowShortFunctionsOnASingleLine: None
