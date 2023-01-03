@@ -36,6 +36,8 @@ fi
 
 docker run -it \
   $RM \
+  --cap-add=SYS_PTRACE \
+  --security-opt seccomp=unconfined \
   --name "$container_name" \
   -e PS1="$prompt" \
   -v $PWD:/usr/project \

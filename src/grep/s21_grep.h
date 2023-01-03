@@ -1,15 +1,6 @@
 #ifndef SRC_GREP_S21_GREP_H_
 #define SRC_GREP_S21_GREP_H_
 
-#define BUFFER_SIZE 5000
-
-#include <getopt.h>
-#include <regex.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 typedef struct {
   bool e;
   bool i;

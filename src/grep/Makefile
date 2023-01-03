@@ -1,5 +1,6 @@
-.PHONY: all build_functional build_heavy build_light test leak leaks style \
-		legacy_style clean rebuild re add_clang sign_code install uninstall
+.PHONY: build build_functional debug build_debug check build_compile_check \
+		test test1 leak leaks style static linter verter clean rebuild re  \
+		os_info add_clang docker docker_prune install uninstall sign_code
 
 SRC := s21_grep.c
 PROGRAM := grep
@@ -8,10 +9,12 @@ EXE := ${PREFIX}${PROGRAM}
 # compile options
 CC := gcc
 WFLAGS := -Wall -Wextra -Werror
-DBG := -g
+DEBUG_INFO := -g
+D_DEBUG := -D DEBUG
+# D_GNU_SRC := -D _GNU_SOURCE
 STD := -std=c11
 OPT := -O2
-ASAN := -fsanitize=address -fstack-protector-all -fsanitize=pointer-compare \
+ASAN := -fsanitize=address #-fstack-protector-all -fsanitize=pointer-compare \
         -fsanitize=pointer-subtract -fsanitize=leak
 # paths
 DIR_PROJ_ROOT := ../..
@@ -33,23 +36,38 @@ else
 	endif
 endif
 OS_MACRO := -D __${OS}__
+ifndef VERBOSE
+MAKEFLAGS += --no-print-directory
+endif
 
 
 all: build
-build: add_clang build_functional 
+build:
+	$(MAKE) clean
+	$(MAKE) add_clang
+	$(MAKE) build_functional
 build_functional: $(EXE)
 $(EXE):
 	$(CC) -o $(EXE) $(OS_MACRO) $(OPT) $(SRC)
-build_debug: clean
-	$(CC) -o $(EXE) $(DBG) $(OS_MACRO) $(SRC)
-compile_check: clean
-	$(CC) -o $(EXE) $(DBG) $(OS_MACRO) $(WFLAGS) $(STD) $(OPT) $(SRC)
+debug:
+	$(MAKE) clean
+	$(MAKE) add_clang
+	$(MAKE) build_debug
+build_debug:
+	$(CC) -o $(EXE) $(DEBUG_INFO) $(D_DEBUG) $(OS_MACRO) $(SRC)
+check:
+	clear
+	$(MAKE) clean
+	$(MAKE) add_clang
+	$(MAKE) build_compile_check
+build_compile_check:
+	$(CC) -o $(EXE) $(DEBUG_INFO) $(OS_MACRO) $(WFLAGS) $(STD) $(ASAN) $(SRC)
 test: build
 	printf "\ec"
 	@cd $(DIR_TESTS) && utility=$(PROGRAM) bash test.sh
-test1: build
+test1: check
 	printf "\ec"
-	cp s21* ./test_grep
+	cp Makefile s21* ./test_grep
 	@cd test_grep && bash test_func_grep.sh
 	rm ./test_grep/s21*
 leak: build # fast check
@@ -61,17 +79,19 @@ leaks: build
 	@cp $(EXE) $(DIR_TESTS)
 	@cd $(DIR_TESTS) && sh test_leak.sh
 	@rm -rf $(DIR_TESTS)/$(EXE)
-check_style: build add_clang
+style: build add_clang
 	clear
 	clang-format -n *.[ch]
 	clang-format -i *.[ch]
-	@$(MAKE) check_headers_style
-static_analysis:
-	echo; cppcheck --enable=all --suppress=missingIncludeSystem *.[ch]
-check_headers_style:
+	$(MAKE) linter
+static:
+	echo \t; cppcheck --enable=all --suppress=missingIncludeSystem *.[ch]
+linter:
 	bash $(DIR_SCRIPTS)/check_headers_style.sh
 	@echo
 verter:
+	$(MAKE) clean
+	$(MAKE) -C ../cat/ clean
 	cd $(DIR_PROJ_ROOT)/materials/build/ && bash run.sh
 clean:
 	@rm -rf {$(EXE),logs,*.{out,log,dSYM,ntesting},*tmp*}
@@ -83,7 +103,7 @@ re:
 	$(MAKE) build
 
 
-detect_os:
+os_info:
 	@echo KERNEL=${KERNEL}
 	@echo NAME=${NAME}
 	@echo INTERNAL_NAME=${OS}
