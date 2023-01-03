@@ -1,23 +1,45 @@
 #ifndef SRC_GREP_S21_GREP_H_
 #define SRC_GREP_S21_GREP_H_
 
+#define _GNU_SOURCE
+#include <errno.h>
+#include <getopt.h>
+#include <regex.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define ERROR -1
+#define SUCCESS 0
+#define PATTERN_BUF 4096
+#define REGERROR_BUF 128
+
 typedef struct {
-  bool e;
-  bool i;
-  bool v;
-  bool c;
-  bool l;
-  bool n;
-  bool h;
-  bool s;
-  bool f;
-  bool o;
+  bool e;  // add pattern;
+  bool i;  // ignore case;
+  bool v;  // invert result;
+  bool c;  // count only;
+  bool l;  // show filenames only;
+  bool n;  // number matched lines;
+  bool h;  // show without filenames;
+  bool s;  // supress errors;
+  bool f;  // read patterns from file;
+  bool o;  // output matched parts;
+  bool show_filenames;
 } t_options;
 
-int parse_options(int argc, char **argv, t_options *flags, char *patternE);
-void processing(t_options *flags, FILE *fp, regex_t reg, char *file);
-void grep_file(t_options *flags, char *pattern, char *file);
-int read_regex_from_file(char *pattern, char *temp);
-void grep(t_options *flags, int argc, char **argv, char *temp);
+typedef struct {
+  char *str;
+  int len;
+  int len_limit;
+  bool pattern_specified;
+  int regex_flag;
+} t_info;
+
+typedef struct {
+  regex_t *regex;
+  regmatch_t *regmatch;
+  bool dot_pattern;
+} t_re;
 
 #endif  // SRC_GREP_S21_GREP_H_

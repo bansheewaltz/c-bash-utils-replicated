@@ -69,7 +69,7 @@ test: build
 test1: build
 	printf "\ec"
 	cp Makefile s21* ./test_grep
-	@cd test_grep && bash test_func_grep.sh
+	@cd test_grep && time bash test_func_grep.sh
 	rm ./test_grep/s21*
 asan: check
 	printf "\ec"
@@ -85,7 +85,7 @@ leaks: build
 	@cp $(EXE) $(DIR_TESTS)
 	@cd $(DIR_TESTS) && sh test_leak.sh
 	@rm -rf $(DIR_TESTS)/$(EXE)
-style: build add_clang
+style: add_clang
 	clear
 	clang-format -n *.[ch]
 	clang-format -i *.[ch]
