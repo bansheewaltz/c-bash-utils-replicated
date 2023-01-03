@@ -14,11 +14,6 @@ void print_usage(void) {
           PROGRAM_NAME);
 }
 
-void delete_delim(t_info *pattern_info) {
-  pattern_info->str[--pattern_info->len] = '\0';
-  pattern_info->str[--pattern_info->len] = '\0';
-}
-
 void add_delim(t_info *pattern_info) {
   pattern_info->str[pattern_info->len++] = '\\';
   pattern_info->str[pattern_info->len++] = '|';
@@ -76,6 +71,7 @@ void add_pattern(t_info *pattern_info, char *pattern) {
 
 int parse_options(int argc, char *argv[], t_options *flags,
                   t_info *pattern_info) {
+  opterr = 0;
   for (int opt = 0; (opt = getopt(argc, argv, "e:ivclnhsf:o")) != -1;) {
     switch (opt) {
       case 'e':
@@ -115,7 +111,8 @@ int parse_options(int argc, char *argv[], t_options *flags,
       case 'o':
         flags->o = true;
         break;
-      default:
+      case '?':
+        fprintf(stderr, "%s: invalid option -- '%c'\n", PROGRAM_NAME, optopt);
         print_usage();
         return ERROR;
     }
@@ -294,18 +291,17 @@ void options_combination_resolution(int argc, t_options *flags) {
   }
 }
 
-void set_prog_name(char *argv[]) {
+void set_prog_name(const char *argv[]) {
   int i = strlen(argv[0]) - 1;
   while (argv[0][i] != '/') {
     --i;
   }
   ++i;
-  argv[0] = &(argv[0][i]);
-  PROGRAM_NAME = argv[0];
+  PROGRAM_NAME = &(argv[0][i]);
 }
 
 int main(int argc, char *argv[]) {
-  set_prog_name(argv);  // also affects argv[0] so getopt shows right name
+  set_prog_name((const char **)argv);
   char re_pattern[PATTERN_BUF] = "";
   t_options flags = {0};
   t_info pattern_info = {.str = re_pattern,          //
