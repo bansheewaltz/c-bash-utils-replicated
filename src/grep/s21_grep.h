@@ -32,7 +32,7 @@ typedef struct {
   char *str;
   int len;
   int len_limit;
-  bool pattern_specified;
+  bool specified;
   int regex_flag;
 } t_info;
 

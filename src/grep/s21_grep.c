@@ -14,38 +14,36 @@ void print_usage(void) {
           PROGRAM_NAME);
 }
 
-void add_delim(char *re_pattern, int *re_len) {
-  re_pattern[(*re_len)++] = '\\';
-  re_pattern[(*re_len)++] = '|';
+void add_delim(char *re_str, int *re_len) {
+  re_str[(*re_len)++] = '\\';
+  re_str[(*re_len)++] = '|';
 }
 
-void add_line(char *re_pattern, int *re_len, char *line, size_t line_len) {
+void add_line(char *re_str, int *re_len, char *line, size_t line_len) {
   if (*re_len != 0) {
-    add_delim(re_pattern, re_len);
+    add_delim(re_str, re_len);
   }
   if (line[line_len - 1] == '\n') {
     line[--line_len] = '\0';
   }
   if (line_len > 0) {
-    strcat(re_pattern, line);
+    strcat(re_str, line);
     *re_len += line_len;
   }
 }
 
-int add_pattern_from_file(t_info *pattern_info, char *filename) {
+int add_pattern_from_file(t_info *re_pattern, char *filename) {
   FILE *file = fopen(filename, "r");
   if (file == NULL) {
     fprintf(stderr, "s21_grep: %s: %s\n", filename, strerror(errno));
     return ERROR;
   }
 
-  int *re_len = &pattern_info->len;
-  char *re_pattern = pattern_info->str;
   char *line = NULL;
   size_t capacity;
   int line_len;
   while ((line_len = getline(&line, &capacity, file)) > 0) {
-    add_line(re_pattern, re_len, line, line_len);
+    add_line(re_pattern->str, &re_pattern->len, line, line_len);
   }
   free(line);
   fclose(file);
@@ -53,33 +51,33 @@ int add_pattern_from_file(t_info *pattern_info, char *filename) {
   return SUCCESS;
 }
 
-void add_pattern(t_info *pattern_info, char *pattern) {
+void add_pattern(t_info *re_pattern, char *pattern) {
   int pattern_len = strlen(pattern);
-  char *re_pattern = pattern_info->str;
-  int *re_len = &pattern_info->len;
+  char *re_str = re_pattern->str;
+  int *re_len = &re_pattern->len;
 
   if (*re_len != 0) {
-    add_delim(re_pattern, re_len);
+    add_delim(re_str, re_len);
   }
   for (int i = 0; i < pattern_len; ++i) {
-    re_pattern[(*re_len)++] = pattern[i];
+    re_str[(*re_len)++] = pattern[i];
   }
-  re_pattern[*re_len] = '\0';
+  re_str[*re_len] = '\0';
 }
 
 int parse_options(int argc, char *argv[], t_options *flags,
-                  t_info *pattern_info) {
+                  t_info *re_pattern) {
   opterr = 0;
   for (int opt = 0; (opt = getopt(argc, argv, "e:ivclnhsf:o")) != -1;) {
     switch (opt) {
       case 'e':
         flags->e = true;
-        add_pattern(pattern_info, optarg);
-        pattern_info->pattern_specified = true;
+        add_pattern(re_pattern, optarg);
+        re_pattern->specified = true;
         break;
       case 'i':
         flags->i = true;
-        pattern_info->regex_flag |= REG_ICASE;
+        re_pattern->regex_flag |= REG_ICASE;
         break;
       case 'v':
         flags->v = true;
@@ -101,10 +99,10 @@ int parse_options(int argc, char *argv[], t_options *flags,
         break;
       case 'f':
         flags->f = true;
-        if (add_pattern_from_file(pattern_info, optarg) != SUCCESS) {
+        if (add_pattern_from_file(re_pattern, optarg) != SUCCESS) {
           return ERROR;
         }
-        pattern_info->pattern_specified = true;
+        re_pattern->specified = true;
         break;
       case 'o':
         flags->o = true;
@@ -137,12 +135,13 @@ void line_related_output(char *line, t_options *flags, regmatch_t *regmatch,
   }
 }
 
-bool is_pattern_dot(t_info *pattern_info) {
-  char *str = pattern_info->str;
+bool is_pattern_dot(t_info *re_pattern) {
+  char *str = re_pattern->str;
   size_t len = strlen(str);
-  char *pattern = ".";
+  char *pattern;
 
   // dot only
+  pattern = ".";
   if (len == 1 && str[0] == *pattern) {
     return true;
   }
@@ -232,18 +231,17 @@ void print_regerror(regex_t *regex, int result) {
   free(error_message);
 }
 
-void cook_search(int argc, char *argv[], t_options *flags,
-                 t_info *pattern_info) {
-  char *re_pattern = pattern_info->str;
-  int regex_flag = pattern_info->regex_flag;
+void cook_search(int argc, char *argv[], t_options *flags, t_info *re_pattern) {
+  char *re_str = re_pattern->str;
+  int regex_flag = re_pattern->regex_flag;
   t_re re = {.regex = &(regex_t){},
              .regmatch = &(regmatch_t){},
-             .dot_pattern = is_pattern_dot(pattern_info)};
+             .dot_pattern = is_pattern_dot(re_pattern)};
 #ifdef DEBUG
-  // re_pattern = "((\\((^";
+  // re_str = "((\\((^";
 #endif
 
-  int result = regcomp(re.regex, re_pattern, regex_flag);
+  int result = regcomp(re.regex, re_str, regex_flag);
   if (result == SUCCESS) {
     for (char **filename = &argv[optind]; filename != &argv[argc]; ++filename) {
       FILE *file = fopen(*filename, "r");
@@ -263,16 +261,16 @@ void cook_search(int argc, char *argv[], t_options *flags,
 
 bool file_is_specified(int argc) { return optind < argc; }
 
-void add_argv_pattern(char *argv[], t_info *pattern_info) {
-  memcpy(pattern_info->str, argv[optind], strlen(argv[optind]));
-  pattern_info->len = strlen(argv[optind]);
-  pattern_info->pattern_specified = true;
+void add_argv_pattern(char *argv[], t_info *re_pattern) {
+  memcpy(re_pattern->str, argv[optind], strlen(argv[optind]));
+  re_pattern->len = strlen(argv[optind]);
+  re_pattern->specified = true;
   ++optind;
 }
 
-bool arguments_are_enough(int argc, t_info *pattern_info) {
-  return ((argc - optind >= 0) && pattern_info->pattern_specified) ||
-         ((argc - optind >= 1) && !pattern_info->pattern_specified);
+bool arguments_are_enough(int argc, t_info *re_pattern) {
+  return ((argc - optind >= 0) && re_pattern->specified) ||
+         ((argc - optind >= 1) && !re_pattern->specified);
 }
 
 bool more_than_one_file(int argc) { return argc - optind > 1; }
@@ -300,25 +298,25 @@ void set_prog_name(const char *argv[]) {
 
 int main(int argc, char *argv[]) {
   set_prog_name((const char **)argv);
-  char re_pattern[PATTERN_BUF] = "";
+  char re_str[PATTERN_BUF] = "";
   t_options flags = {0};
-  t_info pattern_info = {.str = re_pattern,          //
-                         .len = 0,                   //
-                         .len_limit = PATTERN_BUF};  //
+  t_info re_pattern = {.str = re_str,              //
+                       .len = 0,                   //
+                       .len_limit = PATTERN_BUF};  //
 
-  if (parse_options(argc, argv, &flags, &pattern_info) == SUCCESS) {
-    if (!arguments_are_enough(argc, &pattern_info)) {
+  if (parse_options(argc, argv, &flags, &re_pattern) == SUCCESS) {
+    if (!arguments_are_enough(argc, &re_pattern)) {
       fprintf(stderr, "%s: Pattern was not specified\n", PROGRAM_NAME);
     } else {
-      if (pattern_info.pattern_specified == false) {
-        add_argv_pattern(argv, &pattern_info);
+      if (re_pattern.specified == false) {
+        add_argv_pattern(argv, &re_pattern);
       }
 #ifdef DEBUG
-      printf("RE cumulative pattern string: \"%s\"\n\n", pattern_info.str);
+      printf("RE cumulative pattern string: \"%s\"\n\n", re_pattern.str);
 #endif
       if (file_is_specified(argc)) {
         options_combination_resolution(argc, &flags);
-        cook_search(argc, argv, &flags, &pattern_info);
+        cook_search(argc, argv, &flags, &re_pattern);
       } else {
         fprintf(stderr, "%s: File was not specified\n", PROGRAM_NAME);
       }

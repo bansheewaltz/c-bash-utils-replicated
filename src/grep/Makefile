@@ -15,8 +15,9 @@ D_DEBUG := -D DEBUG
 # D_GNU_SRC := -D _GNU_SOURCE
 STD := -std=c11
 OPT := -O2
-DFLAGS := -fsanitize=address -fno-omit-frame-pointer -fstack-protector-all -fsanitize=pointer-compare \
-          -fsanitize=pointer-subtract -fsanitize=leak -fsanitize=undefined -fsanitize=bounds-strict
+DFLAGS := -fsanitize=address -fno-omit-frame-pointer -fstack-protector-all \
+		  -fsanitize=pointer-compare -fsanitize=pointer-subtract \
+		  -fsanitize=leak -fsanitize=undefined -fsanitize=bounds-strict
 # paths
 DIR_PROJ_ROOT := ../..
 DIR_SRC := ..
