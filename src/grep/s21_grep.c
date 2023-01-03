@@ -296,7 +296,8 @@ void options_combination_resolution(int argc, t_options *flags) {
 
 void set_prog_name(char *argv[]) {
   int i = strlen(argv[0]) - 1;
-  for (; argv[0][i] != '/'; --i) {
+  while (argv[0][i] != '/') {
+    --i;
   }
   ++i;
   argv[0] = &(argv[0][i]);
