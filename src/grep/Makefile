@@ -57,7 +57,7 @@ debug:
 build_debug:
 	$(CC) -o $(EXE) $(DEBUG_INFO) $(D_DEBUG) $(OS_MACRO) $(SRC)
 check:
-	clear
+	# clear
 	$(MAKE) clean
 	$(MAKE) add_clang
 	$(MAKE) build_compile_check
@@ -72,10 +72,20 @@ test1: build
 	@cd test_grep && time bash test_func_grep.sh
 	rm ./test_grep/s21*
 asan: check
-	printf "\ec"
+	# printf "\ec"
+	# clear
 	cp Makefile s21* ./test_grep
 	@cd test_grep && bash test_func_grep.sh
 	rm ./test_grep/s21*
+complex:
+	printf "\ec"
+	$(MAKE) style
+	$(MAKE) static
+	$(MAKE) check
+	$(MAKE) asan
+	$(MAKE) verter
+valgrind:
+	valgrind --leak-check=full --show-leak-kinds=all ./$(EXE) $(command)
 leak: build # fast check
 	clear
 	@echo -e "\n"
@@ -86,7 +96,7 @@ leaks: build
 	@cd $(DIR_TESTS) && sh test_leak.sh
 	@rm -rf $(DIR_TESTS)/$(EXE)
 style: add_clang
-	clear
+	# clear
 	clang-format -n *.[ch]
 	clang-format -i *.[ch]
 	$(MAKE) linter
@@ -96,7 +106,8 @@ linter:
 	bash $(DIR_SCRIPTS)/check_headers_style.sh
 	@echo
 verter:
-	printf "\ec"
+	# printf "\ec"
+	# clear
 	$(MAKE) clean
 	$(MAKE) -C ../cat/ clean
 	cd $(DIR_PROJ_ROOT)/materials/build/ && bash run.sh

@@ -14,54 +14,52 @@ void print_usage(void) {
           PROGRAM_NAME);
 }
 
-void add_delim(t_info *pattern_info) {
-  pattern_info->str[pattern_info->len++] = '\\';
-  pattern_info->str[pattern_info->len++] = '|';
+void add_delim(char *re_pattern, int *re_len) {
+  re_pattern[(*re_len)++] = '\\';
+  re_pattern[(*re_len)++] = '|';
 }
 
-void add_line(t_info *pattern_info, char *str, size_t real_len) {
-  int *re_len = &pattern_info->len;
-  char *re_pattern = pattern_info->str;
-
+void add_line(char *re_pattern, int *re_len, char *line, size_t line_len) {
   if (*re_len != 0) {
-    add_delim(pattern_info);
+    add_delim(re_pattern, re_len);
   }
-  real_len = strlen(str);
-  if (str[real_len - 1] == '\n') {
-    str[--real_len] = '\0';
+  if (line[line_len - 1] == '\n') {
+    line[--line_len] = '\0';
   }
-  strcat(re_pattern, str);
-  *re_len += real_len;
+  if (line_len > 0) {
+    strcat(re_pattern, line);
+    *re_len += line_len;
+  }
 }
 
 int add_pattern_from_file(t_info *pattern_info, char *filename) {
-  int result = SUCCESS;
-
   FILE *file = fopen(filename, "r");
   if (file == NULL) {
     fprintf(stderr, "s21_grep: %s: %s\n", filename, strerror(errno));
-    result = ERROR;
-  } else {
-    char *str = NULL;
-    size_t len = 0;
-    size_t real_len = 0;
-    while (getline(&str, &len, file) > 0) {
-      add_line(pattern_info, str, real_len);
-    }
-    free(str);
-    fclose(file);
+    return ERROR;
   }
 
-  return result;
+  int *re_len = &pattern_info->len;
+  char *re_pattern = pattern_info->str;
+  char *line = NULL;
+  size_t capacity;
+  int line_len;
+  while ((line_len = getline(&line, &capacity, file)) > 0) {
+    add_line(re_pattern, re_len, line, line_len);
+  }
+  free(line);
+  fclose(file);
+
+  return SUCCESS;
 }
 
 void add_pattern(t_info *pattern_info, char *pattern) {
   int pattern_len = strlen(pattern);
-  int *re_len = &pattern_info->len;
   char *re_pattern = pattern_info->str;
+  int *re_len = &pattern_info->len;
 
   if (*re_len != 0) {
-    add_delim(pattern_info);
+    add_delim(re_pattern, re_len);
   }
   for (int i = 0; i < pattern_len; ++i) {
     re_pattern[(*re_len)++] = pattern[i];
