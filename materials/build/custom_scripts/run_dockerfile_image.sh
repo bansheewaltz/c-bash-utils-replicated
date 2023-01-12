@@ -8,6 +8,7 @@ RST="\033[0m"
 
 # docker rmi -f $image &>/dev/null
 if ! pgrep -x "Docker" >/dev/null; then
+  echo "Starting Docker app..."
   open -a Docker
   sleep 10
 fi

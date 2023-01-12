@@ -15,16 +15,16 @@
 #define REGERROR_BUF 128
 
 typedef struct {
-  bool e;  // add pattern;
-  bool i;  // ignore case;
-  bool v;  // invert result;
-  bool c;  // count only;
-  bool l;  // show filenames only;
-  bool n;  // number matched lines;
-  bool h;  // show without filenames;
-  bool s;  // supress errors;
-  bool f;  // read patterns from file;
-  bool o;  // output matched parts;
+  bool c;  // output only count of succeeded search requests;
+  bool e;  // add pattern specified after;
+  bool f;  // read search patterns from a file specified after;
+  bool h;  // output result without filenames;
+  bool i;  // ignore search pattern case;
+  bool l;  // output filenames only;
+  bool n;  // output number of matched lines;
+  bool o;  // output matched lines' parts;
+  bool s;  // supress file-accessing erros;
+  bool v;  // invert search result;
   bool show_filenames;
 } t_options;
 
@@ -39,7 +39,7 @@ typedef struct {
 typedef struct {
   regex_t *regex;
   regmatch_t *regmatch;
-  bool dot_pattern;
+  bool is_pattern_dot;
 } t_re;
 
 #endif  // SRC_GREP_S21_GREP_H_

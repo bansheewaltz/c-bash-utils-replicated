@@ -1,8 +1,9 @@
-/* grep utility program
+/* grep Unix[-like] utility program
 ** * realized with static array of patterns
-** * combination of patterns implemented as one cumulative array of pattern
+** * combination of patterns implemented as a one cumulative array of pattern
 **   strings by delimiting singular patterns with pipe symbol '|' (the GNU way)
-** * tests output matches Ubuntu grep utility */
+** * tests output matches Ubuntu grep utility
+*/
 #include "s21_grep.h"
 
 const char *PROGRAM_NAME;
@@ -65,10 +66,14 @@ void add_pattern(t_info *re_pattern, char *pattern) {
   re_str[*re_len] = '\0';
 }
 
+/* getopt_long is used for portability because of different implementations of
+** classic getopt in standard libraries for different platforms
+*/
 int parse_options(int argc, char *argv[], t_options *flags,
                   t_info *re_pattern) {
   opterr = 0;
-  for (int opt = 0; (opt = getopt(argc, argv, "e:ivclnhsf:o")) != -1;) {
+  int opt;
+  while ((opt = getopt_long(argc, argv, "e:ivclnhsf:o", NULL, NULL)) != -1) {
     switch (opt) {
       case 'e':
         flags->e = true;
@@ -107,6 +112,8 @@ int parse_options(int argc, char *argv[], t_options *flags,
       case 'o':
         flags->o = true;
         break;
+      // input should has been validated before, so it's not possible
+      // but whatever
       case '?':
         fprintf(stderr, "%s: invalid option -- '%c'\n", PROGRAM_NAME, optopt);
         print_usage();
@@ -177,11 +184,12 @@ void file_related_output(t_options *flags, char *filename, int matched_n) {
   }
 }
 
-bool no_line_output(t_options *flags, bool dot_pattern, bool line_empty) {
-  return flags->l ||                   //
-         flags->c ||                   //
-         (flags->v && flags->o) ||     //
-         (dot_pattern && line_empty);  //
+bool dont_need_line_output(t_options *flags, bool is_pattern_dot,
+                           bool line_empty) {
+  return flags->l ||                      //
+         flags->c ||                      //
+         (flags->v && flags->o) ||        //
+         (is_pattern_dot && line_empty);  //
 }
 
 void handle_option_o(t_re *re, t_options *flags, char *line, int line_ndx,
@@ -207,10 +215,10 @@ void process_file(FILE *file, char *filename, t_options *flags, t_re *re) {
         (result == REG_NOMATCH && flags->v)) {
       bool line_empty = is_line_empty(line);
 
-      if (!re->dot_pattern || !line_empty) {
+      if (!re->is_pattern_dot || !line_empty) {
         matched_n++;
       }
-      if (no_line_output(flags, re->dot_pattern, line_empty)) {
+      if (dont_need_line_output(flags, re->is_pattern_dot, line_empty)) {
         continue;
       }
       line_related_output(line, flags, re->regmatch, line_ndx, filename);
@@ -236,7 +244,7 @@ void cook_search(int argc, char *argv[], t_options *flags, t_info *re_pattern) {
   int regex_flag = re_pattern->regex_flag;
   t_re re = {.regex = &(regex_t){},
              .regmatch = &(regmatch_t){},
-             .dot_pattern = is_pattern_dot(re_pattern)};
+             .is_pattern_dot = is_pattern_dot(re_pattern)};
 #ifdef DEBUG
   // re_str = "((\\((^";
 #endif
@@ -287,7 +295,7 @@ void options_combination_resolution(int argc, t_options *flags) {
   }
 }
 
-void set_prog_name(const char *argv[]) {
+void t_setprogname(char const *argv[]) {
   int i = strlen(argv[0]) - 1;
   while (argv[0][i] != '/') {
     --i;
@@ -296,8 +304,47 @@ void set_prog_name(const char *argv[]) {
   PROGRAM_NAME = &(argv[0][i]);
 }
 
-int main(int argc, char *argv[]) {
-  set_prog_name((const char **)argv);
+int check_input(int argc, char *argv[], t_info *re_pattern) {
+  bool pattern_from_argv = false;
+  bool pattern_from_file = false;
+  bool pattern_from_e_option = false;
+  bool file_given = false;
+  int result = SUCCESS;
+
+  int i = 0;
+  while (i < argc - 1) {
+    if (strcmp(argv[i], "-f")) {
+      pattern_from_file = true;
+      re_pattern->specified = true;
+      i += 2;
+      continue;
+    }
+    if (strcmp(argv[i], "-e")) {
+      pattern_from_e_option = true;
+      re_pattern->specified = true;
+      i += 2;
+      continue;
+    }
+    if (!pattern_from_e_option &&  //
+        !pattern_from_file &&      //
+        !pattern_from_argv) {
+      pattern_from_argv = true;
+      ++i;
+      continue;
+    }
+    file_given = true;
+    ++i;
+  }
+
+  // if flie is given it means that pattern too
+  if (!file_given) {
+    result = ERROR;
+  }
+  return result;
+}
+
+int main(int const argc, char *argv[]) {
+  t_setprogname((char const **)argv);
   char re_str[PATTERN_BUF] = "";
   t_options flags = {0};
   t_info re_pattern = {.str = re_str,              //
