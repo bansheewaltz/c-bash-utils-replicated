@@ -3,7 +3,7 @@
 		os_info add_clang docker docker_prune install uninstall sign_code  \
 		gitignore
 
-SRC := s21_grep.c
+SRC := main.c utils.c support_functions.c
 PROGRAM := grep
 PREFIX := s21_
 EXE := ${PREFIX}${PROGRAM}
@@ -64,7 +64,7 @@ check:
 build_compile_check: # separate task because of sanitizers don't work on ARM
 	$(CC) -o $(EXE) $(DEBUG_INFO) $(OS_MACRO) $(WFLAGS) $(STD) $(SRC)
 	@echo
-asan:
+asan: clean
 	$(CC) -o $(EXE) $(DEBUG_INFO) $(OS_MACRO) $(WFLAGS) $(STD) $(DFLAGS) $(SRC)
 	cp Makefile s21* ./test_grep
 	@cd test_grep && bash test_func_grep.sh
@@ -75,17 +75,19 @@ asan:
 test: build
 	printf "\ec"
 	@cd test_grep && time bash test_func_grep.sh
-ttest: build
+ttest: clean build
 	printf "\ec"
 	@./s21_grep &> /dev/null # at the first start of an executable macOS performs noratization which takes time
-	@cd test_grep && version=$(EXE) mode=time time bash test_func_grep.sh
 	@cd test_grep && version=$(PROGRAM) mode=time time bash test_func_grep.sh
+	@cd test_grep && version=$(EXE) mode=time time bash test_func_grep.sh
 complex:
 	printf "\ec"
 	$(MAKE) style
 	$(MAKE) static
 	$(MAKE) check
-	$(MAKE) asan
+	@if [ $(OS) != "MACOS" ]; then\
+		$(MAKE) asan;\
+	fi
 	$(MAKE) verter
 valgrind: check
 	{ \

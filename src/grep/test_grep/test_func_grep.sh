@@ -10,8 +10,8 @@ GRN="\033[38;5;106m"
 REG="\033[0m"
 tests_n=2166
 
-rm {Makefile,s21*,*.log} 2>/dev/null
-cp ../{Makefile,s21*} ./
+rm {Makefile,main.c,typedefs.h,*.log,s21_grep} 2>/dev/null
+cp ../{Makefile,main.c,typedefs.h,s21_grep} ./
 
 if [[ "$mode" == "time" ]]; then
   echo "testing $version:"
@@ -23,12 +23,12 @@ fi
 
 declare -a tests=(
   "s test_0_grep.txt VAR"
-  "for s21_grep.c s21_grep.h Makefile VAR"
-  "for s21_grep.c VAR"
-  "-e for -e ^int s21_grep.c s21_grep.h Makefile VAR"
-  "-e for -e ^int s21_grep.c VAR"
-  "-e regex -e ^print s21_grep.c VAR -f test_ptrn_grep.txt"
-  "-e while -e void s21_grep.c Makefile VAR -f test_ptrn_grep.txt"
+  "for main.c typedefs.h Makefile VAR"
+  "for main.c VAR"
+  "-e for -e ^int main.c typedefs.h Makefile VAR"
+  "-e for -e ^int main.c VAR"
+  "-e regex -e ^print main.c VAR -f test_ptrn_grep.txt"
+  "-e while -e void main.c Makefile VAR -f test_ptrn_grep.txt"
 )
 
 declare -a extra=(
@@ -162,5 +162,5 @@ if [[ "$mode" != "time" ]]; then
   echo "ALL: $COUNTER"
 fi
 
+rm {Makefile,main.c,typedefs.h,*.log,s21_grep} 2>/dev/null || true
 echo
-rm {Makefile,s21*,*.log} 2>/dev/null || true

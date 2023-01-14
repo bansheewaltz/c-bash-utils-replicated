@@ -1,22 +1,8 @@
-#ifndef SRC_GREP_S21_GREP_H_
-#define SRC_GREP_S21_GREP_H_
+#ifndef SRC_GREP_TYPEDEFS_H_
+#define SRC_GREP_TYPEDEFS_H_
 
-#define _GNU_SOURCE
-#include <errno.h>
-#include <getopt.h>
 #include <regex.h>
 #include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#define ERROR -1
-#define SUCCESS 0
-#define PATTERN_BUF 16  // initial size
-#define REGERROR_BUF 128
-#define DELIM_LEN 2
-// codes for add_pattern function
-#define FROM_FILE 0
-#define FROM_E 1
 
 typedef struct {
   bool c;  // output only count of succeeded search requests;
@@ -47,4 +33,4 @@ typedef struct {
   bool is_pattern_dot;
 } t_re;
 
-#endif  // SRC_GREP_S21_GREP_H_
+#endif  // SRC_GREP_TYPEDEFS_H_

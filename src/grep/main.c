@@ -4,27 +4,26 @@
 **   strings by delimiting singular patterns with pipe symbol '|' (the GNU way)
 ** * tests output matches Ubuntu grep utility
 */
-#include "s21_grep.h"
+#define _GNU_SOURCE
+#include <errno.h>
+#include <getopt.h>
+#include <regex.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define ERROR -1
+#define SUCCESS 0
+#define PATTERN_BUF 16  // initial size
+#define DELIM_LEN 2
+// codes for add_pattern function
+#define FROM_FILE 0
+#define FROM_E 1
 
-// #include "utils.h"
+#include "support_functions.h"
+#include "utils.h"
 
 const char *PROGRAM_NAME;
-
-void print_error(char message[]) {
-  fprintf(stderr, "%s: %s\n", PROGRAM_NAME, message);
-}
-
-void print_usage(void) {
-  fprintf(stderr,
-          "Usage: ./%s [OPTION]... PATTERNS [FILE]...\n"
-          "Try 'grep --help' for more information.\n",
-          PROGRAM_NAME);
-}
-
-void add_delim_unsafe(char *re_str, int *re_len, char delimiter[]) {
-  strcat(re_str, delimiter);
-  *re_len += strlen(delimiter);
-}
 
 int increase_re_capacity(t_info *re_pattern, int size) {
   int new_capacity;
@@ -190,37 +189,6 @@ void line_related_output(char *line, t_options *flags, regmatch_t *regmatch,
   }
 }
 
-bool is_pattern_dot(t_info *re_pattern) {
-  char *str = re_pattern->str;
-  size_t len = strlen(str);
-  char *pattern;
-
-  // dot only
-  pattern = ".";
-  if (len == 1 && str[0] == *pattern) {
-    return true;
-  }
-  // begginning of the cumulative pattern string
-  pattern = ".\\|";
-  if (strstr(str, pattern) != NULL) {
-    return true;
-  }
-  // end of the string
-  pattern = "|.";
-  if (strstr(str, pattern) != NULL) {
-    return true;
-  }
-  // somewhere in the middle
-  pattern = "|.\\|";
-  if (strstr(str, pattern) != NULL) {
-    return true;
-  }
-
-  return false;
-}
-
-bool is_line_empty(char *line) { return strlen(line) == 1 && line[0] == '\n'; }
-
 void file_related_output(t_options *flags, char *filename, int matched_n) {
   if (flags->c) {
     if (flags->show_filenames) {
@@ -279,14 +247,6 @@ void process_file(FILE *file, char *filename, t_options *flags, t_re *re) {
   file_related_output(flags, filename, matched_n);
 }
 
-void print_regerror(regex_t *regex, int result) {
-  char *error_message = (char *)malloc(sizeof(char) * REGERROR_BUF);
-  regerror(result, regex, error_message, REGERROR_BUF);
-  fprintf(stderr, "%s: RegEx compilation error: %s\n", PROGRAM_NAME,
-          error_message);
-  free(error_message);
-}
-
 void cook_search(int argc, char *argv[], t_options *flags, t_info *re_pattern) {
   char *re_str = re_pattern->str;
   int regex_flag = re_pattern->regex_flag;
@@ -315,10 +275,8 @@ void cook_search(int argc, char *argv[], t_options *flags, t_info *re_pattern) {
   regfree(re.regex);
 }
 
-bool more_than_one_file(int argc) { return argc - optind > 1; }
-
 void options_collision_resolution(int argc, t_options *flags) {
-  if (more_than_one_file(argc) && !flags->h) {
+  if (more_than_one_file(argc, optind) && !flags->h) {
     flags->show_filenames = true;
   }
   if (flags->h && flags->l) {
@@ -327,69 +285,6 @@ void options_collision_resolution(int argc, t_options *flags) {
   if (flags->c && flags->l) {
     flags->c = false;
   }
-}
-
-void t_setprogname(char const invocation_name[]) {
-  int i = strlen(invocation_name) - 1;
-  while (invocation_name[i] != '/') {
-    --i;
-  }
-  ++i;
-  PROGRAM_NAME = &(invocation_name[i]);
-}
-
-bool arg_is_pattern_option(char arg[]) {
-  return arg[0] == '-' &&                         //
-         (strchr(arg, 'f') || strchr(arg, 'e'));  //
-}
-
-void print_opterror(char arg[]) {
-  char message[35] = "Option requires an argument -- ";
-  sprintf(strchr(message, '\0'), "'%c'", strchr(arg, 'f') ? 'f' : 'e');
-  print_error(message);
-  print_usage();
-}
-
-bool arguments_are_enough(int argc, char *argv[], t_info *re_pattern) {
-  bool pattern_from_argv = false;
-  bool pattern_from_option = false;
-  bool file_given = false;
-  bool result = true;
-
-  int i = 1;
-  while (i < argc) {
-    if (arg_is_pattern_option(argv[i])) {
-      if (i + 1 == argc) {
-        print_opterror(argv[i]);
-        result = false;
-      }
-      if (pattern_from_argv) {
-        pattern_from_argv = false;
-        file_given = true;
-      }
-      pattern_from_option = true;
-      re_pattern->specified_through_option = true;
-      i += 2;
-      continue;
-    }
-    if (!pattern_from_option &&  //
-        !pattern_from_argv) {
-      pattern_from_argv = true;
-      ++i;
-      continue;
-    }
-    file_given = true;
-    ++i;
-  }
-
-  if (!pattern_from_option && !pattern_from_argv) {
-    print_usage();
-    result = false;
-  } else if (!file_given) {
-    print_error("File was not specified");
-    result = false;
-  }
-  return result;
 }
 
 int main(int const argc, char *argv[]) {
