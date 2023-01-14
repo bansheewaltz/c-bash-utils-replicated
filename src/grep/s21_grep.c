@@ -1,5 +1,5 @@
 /* grep Unix[-like] utility program
-** * realized with static array of patterns
+** * realized with a static array of patterns
 ** * combination of patterns implemented as a one cumulative array of pattern
 **   strings by delimiting singular patterns with pipe symbol '|' (the GNU way)
 ** * tests output matches Ubuntu grep utility
@@ -68,6 +68,7 @@ void add_pattern(t_info *re_pattern, char *pattern) {
 
 /* getopt_long is used for portability because of different implementations of
 ** classic getopt in standard libraries for different platforms
+** while getopt_long realization is universal as a GNU extension
 */
 int parse_options(int argc, char *argv[], t_options *flags,
                   t_info *re_pattern) {
@@ -112,8 +113,6 @@ int parse_options(int argc, char *argv[], t_options *flags,
       case 'o':
         flags->o = true;
         break;
-      // input should has been validated before, so it's not possible
-      // but whatever
       case '?':
         fprintf(stderr, "%s: invalid option -- '%c'\n", PROGRAM_NAME, optopt);
         print_usage();
@@ -267,18 +266,11 @@ void cook_search(int argc, char *argv[], t_options *flags, t_info *re_pattern) {
   regfree(re.regex);
 }
 
-bool file_is_specified(int argc) { return optind < argc; }
-
-void add_argv_pattern(char *argv[], t_info *re_pattern) {
+void take_pattern_from_argv(char *argv[], t_info *re_pattern) {
   memcpy(re_pattern->str, argv[optind], strlen(argv[optind]));
   re_pattern->len = strlen(argv[optind]);
   re_pattern->specified = true;
   ++optind;
-}
-
-bool arguments_are_enough(int argc, t_info *re_pattern) {
-  return ((argc - optind >= 0) && re_pattern->specified) ||
-         ((argc - optind >= 1) && !re_pattern->specified);
 }
 
 bool more_than_one_file(int argc) { return argc - optind > 1; }
@@ -304,29 +296,45 @@ void t_setprogname(char const *argv[]) {
   PROGRAM_NAME = &(argv[0][i]);
 }
 
-int check_input(int argc, char *argv[], t_info *re_pattern) {
-  bool pattern_from_argv = false;
-  bool pattern_from_file = false;
-  bool pattern_from_e_option = false;
-  bool file_given = false;
-  int result = SUCCESS;
+void print_error(char message[]) {
+  fprintf(stderr, "%s: %s\n", PROGRAM_NAME, message);
+}
 
-  int i = 0;
-  while (i < argc - 1) {
-    if (strcmp(argv[i], "-f")) {
-      pattern_from_file = true;
+bool arg_is_pattern_option(char arg[]) {
+  return arg[0] == '-' &&                         //
+         (strchr(arg, 'f') || strchr(arg, 'e'));  //
+}
+
+void print_opterror(char arg[]) {
+  char message[35] = "Option requires an argument -- ";
+  sprintf(strchr(message, '\0'), "'%c'", strchr(arg, 'f') ? 'f' : 'e');
+  print_error(message);
+  print_usage();
+}
+
+bool arguments_are_enough(int argc, char *argv[], t_info *re_pattern) {
+  bool pattern_from_argv = false;
+  bool pattern_from_option = false;
+  bool file_given = false;
+  bool result = true;
+
+  int i = 1;
+  while (i < argc) {
+    if (arg_is_pattern_option(argv[i])) {
+      if (i + 1 == argc) {
+        print_opterror(argv[i]);
+        result = false;
+      }
+      if (pattern_from_argv) {
+        pattern_from_argv = false;
+        file_given = true;
+      }
+      pattern_from_option = true;
       re_pattern->specified = true;
       i += 2;
       continue;
     }
-    if (strcmp(argv[i], "-e")) {
-      pattern_from_e_option = true;
-      re_pattern->specified = true;
-      i += 2;
-      continue;
-    }
-    if (!pattern_from_e_option &&  //
-        !pattern_from_file &&      //
+    if (!pattern_from_option &&  //
         !pattern_from_argv) {
       pattern_from_argv = true;
       ++i;
@@ -336,9 +344,12 @@ int check_input(int argc, char *argv[], t_info *re_pattern) {
     ++i;
   }
 
-  // if flie is given it means that pattern too
-  if (!file_given) {
-    result = ERROR;
+  if (!pattern_from_option && !pattern_from_argv) {
+    print_error("Pattern was not specified");
+    result = false;
+  } else if (!file_given) {
+    print_error("File was not specified");
+    result = false;
   }
   return result;
 }
@@ -351,23 +362,16 @@ int main(int const argc, char *argv[]) {
                        .len = 0,                   //
                        .len_limit = PATTERN_BUF};  //
 
-  if (parse_options(argc, argv, &flags, &re_pattern) == SUCCESS) {
-    if (!arguments_are_enough(argc, &re_pattern)) {
-      fprintf(stderr, "%s: Pattern was not specified\n", PROGRAM_NAME);
-    } else {
-      if (re_pattern.specified == false) {
-        add_argv_pattern(argv, &re_pattern);
-      }
-#ifdef DEBUG
-      printf("RE cumulative pattern string: \"%s\"\n\n", re_pattern.str);
-#endif
-      if (file_is_specified(argc)) {
-        options_combination_resolution(argc, &flags);
-        cook_search(argc, argv, &flags, &re_pattern);
-      } else {
-        fprintf(stderr, "%s: File was not specified\n", PROGRAM_NAME);
-      }
+  if (arguments_are_enough(argc, argv, &re_pattern) &&
+      parse_options(argc, argv, &flags, &re_pattern) == SUCCESS) {
+    if (re_pattern.specified == false) {
+      take_pattern_from_argv(argv, &re_pattern);
     }
+#ifdef DEBUG
+    printf("RE cumulative pattern string: \"%s\"\n\n", re_pattern.str);
+#endif
+    options_combination_resolution(argc, &flags);
+    cook_search(argc, argv, &flags, &re_pattern);
   }
 
   return EXIT_SUCCESS;
