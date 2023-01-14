@@ -69,14 +69,17 @@ asan:
 	cp Makefile s21* ./test_grep
 	@cd test_grep && bash test_func_grep.sh
 	rm ./test_grep/s21*
+# test: build
+# 	printf "\ec"
+# 	@cd $(DIR_TESTS) && utility=$(PROGRAM) bash test.sh
 test: build
 	printf "\ec"
-	@cd $(DIR_TESTS) && utility=$(PROGRAM) bash test.sh
-test1: build
-	printf "\ec"
-	cp Makefile s21* ./test_grep
 	@cd test_grep && time bash test_func_grep.sh
-	rm ./test_grep/s21*
+ttest: build
+	printf "\ec"
+	@./s21_grep &> /dev/null # at the first start of an executable macOS performs noratization which takes time
+	@cd test_grep && version=$(EXE) mode=time time bash test_func_grep.sh
+	@cd test_grep && version=$(PROGRAM) mode=time time bash test_func_grep.sh
 complex:
 	printf "\ec"
 	$(MAKE) style

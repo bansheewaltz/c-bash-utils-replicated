@@ -383,10 +383,10 @@ bool arguments_are_enough(int argc, char *argv[], t_info *re_pattern) {
   }
 
   if (!pattern_from_option && !pattern_from_argv) {
-    print_error("Pattern was not specified_through_option");
+    print_usage();
     result = false;
   } else if (!file_given) {
-    print_error("File was not specified_through_option");
+    print_error("File was not specified");
     result = false;
   }
   return result;

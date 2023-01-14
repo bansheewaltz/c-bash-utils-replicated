@@ -8,6 +8,18 @@ DIFF_RES=""
 RED="\033[38;5;203m"
 GRN="\033[38;5;106m"
 REG="\033[0m"
+tests_n=2166
+
+rm {Makefile,s21*,*.log} 2>/dev/null
+cp ../{Makefile,s21*} ./
+
+if [[ "$mode" == "time" ]]; then
+  echo "testing $version:"
+fi
+
+if [[ "$version" == "s21_grep" ]]; then
+  version=./$version
+fi
 
 declare -a tests=(
   "s test_0_grep.txt VAR"
@@ -46,20 +58,36 @@ declare -a extra=(
   "-f test_3_grep.txt test_5_grep.txt"
 )
 
+function progress_bar {
+  let _progress=(${1} * 100 / ${2} * 100)/100
+  let _done=(${_progress} * 4)/10
+  let _left=40-$_done
+
+  _fill=$(printf "%${_done}s")
+  _empty=$(printf "%${_left}s")
+
+  printf "\rtest_number: %4d/$tests_n [${_fill// /#}${_empty// /-}] ${_progress}%%" $COUNTER
+}
+
 testing() {
   t=$(echo $@ | sed "s/VAR/$var/")
-  ./s21_grep $t >test_s21_grep.log
-  grep $t >test_sys_grep.log
-  DIFF_RES="$(diff -s test_s21_grep.log test_sys_grep.log)"
-  ((COUNTER++))
-  if [ "$DIFF_RES" == "Files test_s21_grep.log and test_sys_grep.log are identical" ]; then
-    ((SUCCESS++))
-    printf "${RED}$FAIL${REG}/${GRN}$SUCCESS${REG}/$COUNTER \033[32msuccess${REG} grep $t\n"
+  if [[ "$mode" == "time" ]]; then
+    $version $t &>/dev/null
+    ((COUNTER++))
+    progress_bar $COUNTER $tests_n
   else
-    ((FAIL++))
-    printf "${RED}$FAIL${REG}/${GRN}$SUCCESS${REG}/$COUNTER \033[31mfail${REG} grep $t\n"
+    ./s21_grep $t >test_s21_grep.log
+    grep $t >test_sys_grep.log
+    DIFF_RES="$(diff -s test_s21_grep.log test_sys_grep.log)"
+    ((COUNTER++))
+    if [ "$DIFF_RES" == "Files test_s21_grep.log and test_sys_grep.log are identical" ]; then
+      ((SUCCESS++))
+      printf "${RED}$FAIL${REG}/${GRN}$SUCCESS${REG}/$COUNTER \033[32msuccess${REG} grep $t\n"
+    else
+      ((FAIL++))
+      printf "${RED}$FAIL${REG}/${GRN}$SUCCESS${REG}/$COUNTER \033[31mfail${REG} grep $t\n"
+    fi
   fi
-  rm test_s21_grep.log test_sys_grep.log
 }
 
 # специфические тесты
@@ -128,6 +156,11 @@ for var1 in v c l n h o; do
   done
 done
 
-printf "\033[31mFAIL: $FAIL${REG}\n"
-printf "\033[32mSUCCESS: $SUCCESS${REG}\n"
-echo "ALL: $COUNTER\n"
+if [[ "$mode" != "time" ]]; then
+  printf "\033[31mFAIL: $FAIL${REG}\n"
+  printf "\033[32mSUCCESS: $SUCCESS${REG}\n"
+  echo "ALL: $COUNTER"
+fi
+
+echo
+rm {Makefile,s21*,*.log} 2>/dev/null || true
