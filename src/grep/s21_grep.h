@@ -11,8 +11,12 @@
 #include <string.h>
 #define ERROR -1
 #define SUCCESS 0
-#define PATTERN_BUF 4096
+#define PATTERN_BUF 16  // initial size
 #define REGERROR_BUF 128
+#define DELIM_LEN 2
+// codes for add_pattern function
+#define FROM_FILE 0
+#define FROM_E 1
 
 typedef struct {
   bool c;  // output only count of succeeded search requests;
@@ -26,13 +30,14 @@ typedef struct {
   bool s;  // supress file-accessing erros;
   bool v;  // invert search result;
   bool show_filenames;
+  // as internal helper
 } t_options;
 
 typedef struct {
   char *str;
   int len;
-  int len_limit;
-  bool specified;
+  int capacity;
+  bool specified_through_option;
   int regex_flag;
 } t_info;
 

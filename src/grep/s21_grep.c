@@ -1,12 +1,18 @@
 /* grep Unix[-like] utility program
-** * realized with a static array of patterns
+** * realized with a dynamic array of patterns
 ** * combination of patterns implemented as a one cumulative array of pattern
 **   strings by delimiting singular patterns with pipe symbol '|' (the GNU way)
 ** * tests output matches Ubuntu grep utility
 */
 #include "s21_grep.h"
 
+// #include "utils.h"
+
 const char *PROGRAM_NAME;
+
+void print_error(char message[]) {
+  fprintf(stderr, "%s: %s\n", PROGRAM_NAME, message);
+}
 
 void print_usage(void) {
   fprintf(stderr,
@@ -15,22 +21,51 @@ void print_usage(void) {
           PROGRAM_NAME);
 }
 
-void add_delim(char *re_str, int *re_len) {
-  re_str[(*re_len)++] = '\\';
-  re_str[(*re_len)++] = '|';
+void add_delim_unsafe(char *re_str, int *re_len, char delimiter[]) {
+  strcat(re_str, delimiter);
+  *re_len += strlen(delimiter);
 }
 
-void add_line(char *re_str, int *re_len, char *line, size_t line_len) {
-  if (*re_len != 0) {
-    add_delim(re_str, re_len);
+int increase_re_capacity(t_info *re_pattern, int size) {
+  int new_capacity;
+  void *tmp = NULL;
+
+  if (re_pattern->capacity * 1.5 >= re_pattern->capacity + size) {
+    new_capacity = re_pattern->capacity * 1.5;
+    tmp = realloc(re_pattern->str, new_capacity);
   }
-  if (line[line_len - 1] == '\n') {
-    line[--line_len] = '\0';
+
+  if (tmp == NULL) {
+    new_capacity = re_pattern->capacity + size;
+    tmp = realloc(re_pattern->str, new_capacity);
+    if (tmp == NULL) {
+      return ERROR;
+    }
   }
-  if (line_len > 0) {
-    strcat(re_str, line);
-    *re_len += line_len;
+  re_pattern->capacity = new_capacity;
+  re_pattern->str = tmp;
+
+  return SUCCESS;
+}
+
+int add_pattern_to_re(t_info *re_pattern, char *pattern) {
+  int pattern_len = strlen(pattern);
+  int request_size = DELIM_LEN + pattern_len;
+
+  if (re_pattern->capacity <= re_pattern->len + request_size) {
+    if (increase_re_capacity(re_pattern, request_size + 1) != SUCCESS) {
+      print_error("Heap memory overflow");
+      return ERROR;
+    }
   }
+
+  if (re_pattern->len != 0) {
+    add_delim_unsafe(re_pattern->str, &re_pattern->len, "\\|");
+  }
+  strcat(re_pattern->str, pattern);
+  re_pattern->len += pattern_len;
+
+  return SUCCESS;
 }
 
 int add_pattern_from_file(t_info *re_pattern, char *filename) {
@@ -44,7 +79,12 @@ int add_pattern_from_file(t_info *re_pattern, char *filename) {
   size_t capacity;
   int line_len;
   while ((line_len = getline(&line, &capacity, file)) > 0) {
-    add_line(re_pattern->str, &re_pattern->len, line, line_len);
+    if (line[line_len - 1] == '\n') {
+      line[--line_len] = '\0';
+    }
+    if (add_pattern_to_re(re_pattern, line) != SUCCESS) {
+      return ERROR;
+    }
   }
   free(line);
   fclose(file);
@@ -52,22 +92,30 @@ int add_pattern_from_file(t_info *re_pattern, char *filename) {
   return SUCCESS;
 }
 
-void add_pattern(t_info *re_pattern, char *pattern) {
-  int pattern_len = strlen(pattern);
-  char *re_str = re_pattern->str;
-  int *re_len = &re_pattern->len;
+int add_pattern(t_info *re_pattern, char *optarg, int arg) {
+  if (re_pattern->capacity == 0) {
+    char *tmp = (char *)calloc(PATTERN_BUF, sizeof(char));
+    if (tmp != NULL) {
+      re_pattern->str = tmp;
+      re_pattern->capacity = PATTERN_BUF;
+    } else {
+      return ERROR;
+    }
+  }
 
-  if (*re_len != 0) {
-    add_delim(re_str, re_len);
+  if (arg == FROM_FILE) {
+    return add_pattern_from_file(re_pattern, optarg);
   }
-  for (int i = 0; i < pattern_len; ++i) {
-    re_str[(*re_len)++] = pattern[i];
+  if (arg == FROM_E) {
+    return add_pattern_to_re(re_pattern, optarg);
   }
-  re_str[*re_len] = '\0';
+
+  return ERROR;
 }
 
-/* getopt_long is used for portability because of different implementations of
-** classic getopt in standard libraries for different platforms
+/* getopt_long is used for portability
+** because of classic getopt has different implementations
+** in standard libraries for different platforms
 ** while getopt_long realization is universal as a GNU extension
 */
 int parse_options(int argc, char *argv[], t_options *flags,
@@ -78,8 +126,9 @@ int parse_options(int argc, char *argv[], t_options *flags,
     switch (opt) {
       case 'e':
         flags->e = true;
-        add_pattern(re_pattern, optarg);
-        re_pattern->specified = true;
+        if (add_pattern(re_pattern, optarg, FROM_E) != SUCCESS) {
+          return ERROR;
+        }
         break;
       case 'i':
         flags->i = true;
@@ -105,10 +154,10 @@ int parse_options(int argc, char *argv[], t_options *flags,
         break;
       case 'f':
         flags->f = true;
-        if (add_pattern_from_file(re_pattern, optarg) != SUCCESS) {
+        if (add_pattern(re_pattern, optarg, FROM_FILE) != SUCCESS) {
           return ERROR;
         }
-        re_pattern->specified = true;
+        re_pattern->specified_through_option = true;
         break;
       case 'o':
         flags->o = true;
@@ -266,13 +315,6 @@ void cook_search(int argc, char *argv[], t_options *flags, t_info *re_pattern) {
   regfree(re.regex);
 }
 
-void take_pattern_from_argv(char *argv[], t_info *re_pattern) {
-  memcpy(re_pattern->str, argv[optind], strlen(argv[optind]));
-  re_pattern->len = strlen(argv[optind]);
-  re_pattern->specified = true;
-  ++optind;
-}
-
 bool more_than_one_file(int argc) { return argc - optind > 1; }
 
 void options_collision_resolution(int argc, t_options *flags) {
@@ -287,17 +329,13 @@ void options_collision_resolution(int argc, t_options *flags) {
   }
 }
 
-void t_setprogname(char const *argv[]) {
-  int i = strlen(argv[0]) - 1;
-  while (argv[0][i] != '/') {
+void t_setprogname(char const invocation_name[]) {
+  int i = strlen(invocation_name) - 1;
+  while (invocation_name[i] != '/') {
     --i;
   }
   ++i;
-  PROGRAM_NAME = &(argv[0][i]);
-}
-
-void print_error(char message[]) {
-  fprintf(stderr, "%s: %s\n", PROGRAM_NAME, message);
+  PROGRAM_NAME = &(invocation_name[i]);
 }
 
 bool arg_is_pattern_option(char arg[]) {
@@ -330,7 +368,7 @@ bool arguments_are_enough(int argc, char *argv[], t_info *re_pattern) {
         file_given = true;
       }
       pattern_from_option = true;
-      re_pattern->specified = true;
+      re_pattern->specified_through_option = true;
       i += 2;
       continue;
     }
@@ -345,37 +383,33 @@ bool arguments_are_enough(int argc, char *argv[], t_info *re_pattern) {
   }
 
   if (!pattern_from_option && !pattern_from_argv) {
-    print_error("Pattern was not specified");
+    print_error("Pattern was not specified_through_option");
     result = false;
   } else if (!file_given) {
-    print_error("File was not specified");
+    print_error("File was not specified_through_option");
     result = false;
   }
   return result;
 }
 
-bool pattern_passed_not_through_option(t_info *re_pattern) {
-  return re_pattern->specified == false;
-}
-
 int main(int const argc, char *argv[]) {
-  t_setprogname((char const **)argv);
-  char re_str[PATTERN_BUF] = "";
+  t_setprogname((char const *)argv[0]);
   t_options flags = {0};
-  t_info re_pattern = {.str = re_str,              //
-                       .len = 0,                   //
-                       .len_limit = PATTERN_BUF};  //
+  t_info re_pattern = {0};
 
   if (arguments_are_enough(argc, argv, &re_pattern) &&
       parse_options(argc, argv, &flags, &re_pattern) == SUCCESS) {
-    if (pattern_passed_not_through_option(&re_pattern)) {
-      take_pattern_from_argv(argv, &re_pattern);
+    if (re_pattern.specified_through_option == false) {
+      re_pattern.str = argv[optind++];
     }
     options_collision_resolution(argc, &flags);
 #ifdef DEBUG
     printf("RE cumulative pattern string: \"%s\"\n\n", re_pattern.str);
 #endif
     cook_search(argc, argv, &flags, &re_pattern);
+    if (re_pattern.specified_through_option == true) {
+      free(re_pattern.str);
+    }
   }
 
   return EXIT_SUCCESS;

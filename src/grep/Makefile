@@ -84,8 +84,13 @@ complex:
 	$(MAKE) check
 	$(MAKE) asan
 	$(MAKE) verter
-valgrind:
-	valgrind --leak-check=full --show-leak-kinds=all ./$(EXE) $(command)
+valgrind: check
+	{ \
+	if [ -z "$$args" ]; then \
+    	args="-e ^print s21_grep.c -v -l -f test_ptrn_grep.txt"; \
+	fi; \
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(EXE) $$args; \
+	}
 leak: build # fast check
 	leaks -atExit -- ./$(EXE) $(DIR_TESTS)/test_files/* 2>/dev/null | grep -aE 'nodes|total|TOTAL|LEAK' | nl -b n
 leaks: build
