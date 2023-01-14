@@ -275,7 +275,7 @@ void take_pattern_from_argv(char *argv[], t_info *re_pattern) {
 
 bool more_than_one_file(int argc) { return argc - optind > 1; }
 
-void options_combination_resolution(int argc, t_options *flags) {
+void options_collision_resolution(int argc, t_options *flags) {
   if (more_than_one_file(argc) && !flags->h) {
     flags->show_filenames = true;
   }
@@ -354,6 +354,10 @@ bool arguments_are_enough(int argc, char *argv[], t_info *re_pattern) {
   return result;
 }
 
+bool pattern_passed_not_through_option(t_info *re_pattern) {
+  return re_pattern->specified == false;
+}
+
 int main(int const argc, char *argv[]) {
   t_setprogname((char const **)argv);
   char re_str[PATTERN_BUF] = "";
@@ -364,13 +368,13 @@ int main(int const argc, char *argv[]) {
 
   if (arguments_are_enough(argc, argv, &re_pattern) &&
       parse_options(argc, argv, &flags, &re_pattern) == SUCCESS) {
-    if (re_pattern.specified == false) {
+    if (pattern_passed_not_through_option(&re_pattern)) {
       take_pattern_from_argv(argv, &re_pattern);
     }
+    options_collision_resolution(argc, &flags);
 #ifdef DEBUG
     printf("RE cumulative pattern string: \"%s\"\n\n", re_pattern.str);
 #endif
-    options_combination_resolution(argc, &flags);
     cook_search(argc, argv, &flags, &re_pattern);
   }
 

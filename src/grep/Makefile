@@ -58,12 +58,17 @@ debug:
 build_debug:
 	$(CC) -o $(EXE) $(DEBUG_INFO) $(D_DEBUG) $(OS_MACRO) $(SRC)
 check:
-	# clear
 	$(MAKE) clean
 	$(MAKE) add_clang
 	$(MAKE) build_compile_check
-build_compile_check:
+build_compile_check: # separate task because of sanitizers don't work on ARM
+	$(CC) -o $(EXE) $(DEBUG_INFO) $(OS_MACRO) $(WFLAGS) $(STD) $(SRC)
+	@echo
+asan:
 	$(CC) -o $(EXE) $(DEBUG_INFO) $(OS_MACRO) $(WFLAGS) $(STD) $(DFLAGS) $(SRC)
+	cp Makefile s21* ./test_grep
+	@cd test_grep && bash test_func_grep.sh
+	rm ./test_grep/s21*
 test: build
 	printf "\ec"
 	@cd $(DIR_TESTS) && utility=$(PROGRAM) bash test.sh
@@ -71,12 +76,6 @@ test1: build
 	printf "\ec"
 	cp Makefile s21* ./test_grep
 	@cd test_grep && time bash test_func_grep.sh
-	rm ./test_grep/s21*
-asan: check
-	# printf "\ec"
-	# clear
-	cp Makefile s21* ./test_grep
-	@cd test_grep && bash test_func_grep.sh
 	rm ./test_grep/s21*
 complex:
 	printf "\ec"
@@ -88,30 +87,27 @@ complex:
 valgrind:
 	valgrind --leak-check=full --show-leak-kinds=all ./$(EXE) $(command)
 leak: build # fast check
-	clear
-	@echo -e "\n"
 	leaks -atExit -- ./$(EXE) $(DIR_TESTS)/test_files/* 2>/dev/null | grep -aE 'nodes|total|TOTAL|LEAK' | nl -b n
 leaks: build
-	clear
 	@cp $(EXE) $(DIR_TESTS)
 	@cd $(DIR_TESTS) && sh test_leak.sh
 	@rm -rf $(DIR_TESTS)/$(EXE)
 style: add_clang
-	# clear
 	clang-format -n *.[ch]
 	clang-format -i *.[ch]
-	$(MAKE) linter
-static:
-	echo; cppcheck --enable=all --suppress=missingIncludeSystem *.[ch]
-linter:
-	bash $(DIR_SCRIPTS)/check_headers_style.sh
 	@echo
+	$(MAKE) linter
+	@echo
+static:
+	cppcheck --enable=all --suppress=missingIncludeSystem *.[ch]
+	@echo
+linter:
+	bash $(DIR_SCRIPTS)/run_linter.sh
 verter:
-	# printf "\ec"
-	# clear
 	$(MAKE) clean
 	$(MAKE) -C ../cat/ clean
 	cd $(DIR_PROJ_ROOT)/materials/build/ && bash run.sh
+	@echo
 clean:
 	@rm -rf {$(EXE),logs,*.{out,log,dSYM,ntesting},*tmp*}
 	@rm -rf $(DIR_TESTS)/{$(EXE),*.{out,log,dSYM,ntesting},*tmp*,logs}
