@@ -1,6 +1,6 @@
-.PHONY: build build_functional debug build_debug check build_compile_check \
-		test test1 leak leaks style static linter verter clean rebuild re  \
-		os_info add_clang docker docker_prune install uninstall sign_code  \
+.PHONY: build build_functional debug build_debug compiler build_compile_check\
+		test test1 leak leaks style static linter verter clean rebuild re\
+		os_info add_clang docker docker_prune install uninstall sign_code\
 		gitignore
 
 SRC := main.c utils.c support_functions.c
@@ -15,8 +15,8 @@ D_DEBUG := -D DEBUG
 # D_GNU_SRC := -D _GNU_SOURCE
 STD := -std=c11
 OPT := -O2
-DFLAGS := -fsanitize=address -fno-omit-frame-pointer -fstack-protector-all \
-		  -fsanitize=pointer-compare -fsanitize=pointer-subtract \
+DFLAGS := -fsanitize=address -fno-omit-frame-pointer -fstack-protector-all\
+		  -fsanitize=pointer-compare -fsanitize=pointer-subtract\
 		  -fsanitize=leak -fsanitize=undefined -fsanitize=bounds-strict
 # paths
 DIR_PROJ_ROOT := ../..
@@ -41,6 +41,7 @@ OS_MACRO := -D __${OS}__
 ifndef VERBOSE
 MAKEFLAGS += --no-print-directory
 endif
+DYNAMIC_SAMPLE := -e ^print -e sdlfkjsdl -e k -e fjsdkfjsdlkfj s21_grep.c -v -l -f test_ptrn_grep.txt
 
 
 all: build
@@ -57,13 +58,12 @@ debug:
 	$(MAKE) build_debug
 build_debug:
 	$(CC) -o $(EXE) $(DEBUG_INFO) $(D_DEBUG) $(OS_MACRO) $(SRC)
-check:
+compiler:
 	$(MAKE) clean
 	$(MAKE) add_clang
 	$(MAKE) build_compile_check
 build_compile_check: # separate task because of sanitizers don't work on ARM
 	$(CC) -o $(EXE) $(DEBUG_INFO) $(OS_MACRO) $(WFLAGS) $(STD) $(SRC)
-	@echo
 asan: clean
 	$(CC) -o $(EXE) $(DEBUG_INFO) $(OS_MACRO) $(WFLAGS) $(STD) $(DFLAGS) $(SRC)
 	cp Makefile s21* ./test_grep
@@ -80,28 +80,37 @@ ttest: clean build
 	@./s21_grep &> /dev/null # at the first start of an executable macOS performs noratization which takes time
 	@cd test_grep && version=$(PROGRAM) mode=time time bash test_func_grep.sh
 	@cd test_grep && version=$(EXE) mode=time time bash test_func_grep.sh
-complex:
+complex: clean
 	printf "\ec"
+	$(MAKE) compiler
+	@echo
 	$(MAKE) style
 	$(MAKE) static
-	$(MAKE) check
+	$(MAKE) dynamic
 	@if [ $(OS) != "MACOS" ]; then\
 		$(MAKE) asan;\
 	fi
 	$(MAKE) verter
-valgrind: check
-	{ \
-	if [ -z "$$args" ]; then \
-    	args="-e ^print s21_grep.c -v -l -f test_ptrn_grep.txt"; \
-	fi; \
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./$(EXE) $$args; \
-	}
+valgrind: compiler
+	@if [ -z "$$args" ]; then\
+    	args="$(DYNAMIC_SAMPLE)";\
+	fi;\
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes -s ./$(EXE) $$args
 leak: build # fast check
 	leaks -atExit -- ./$(EXE) $(DIR_TESTS)/test_files/* 2>/dev/null | grep -aE 'nodes|total|TOTAL|LEAK' | nl -b n
-leaks: build
-	@cp $(EXE) $(DIR_TESTS)
-	@cd $(DIR_TESTS) && sh test_leak.sh
-	@rm -rf $(DIR_TESTS)/$(EXE)
+leaks: compiler
+	@if [ -z "$$args" ]; then\
+    	args="$(DYNAMIC_SAMPLE)";\
+	fi;\
+	leaks -atExit -- ./$(EXE) $$args 2>/dev/null
+dynamic: clean
+	@printf "testing args: $(DYNAMIC_SAMPLE)\n\n"
+	@if [ $(OS) == "MACOS" ]; then\
+		$(MAKE) leaks;\
+	else\
+		$(MAKE) valgrind;\
+	fi
+	@echo
 style: add_clang
 	clang-format -n *.[ch]
 	clang-format -i *.[ch]
@@ -116,6 +125,11 @@ linter:
 verter:
 	$(MAKE) clean
 	$(MAKE) -C ../cat/ clean
+	@if ! pgrep -x "Docker" >/dev/null; then\
+		echo "Starting Docker app...";\
+		open -a Docker;\
+		sleep 10;\
+	fi
 	cd $(DIR_PROJ_ROOT)/materials/build/ && bash run.sh
 	@echo
 clean:

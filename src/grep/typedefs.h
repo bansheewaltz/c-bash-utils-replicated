@@ -24,7 +24,6 @@ typedef struct {
   int len;
   int capacity;
   bool specified_through_option;
-  int regex_flag;
 } t_info;
 
 typedef struct {

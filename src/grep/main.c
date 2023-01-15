@@ -1,10 +1,10 @@
 /* grep Unix[-like] utility program
-** * realized with a dynamic array of patterns
-** * combination of patterns implemented as a one cumulative array of pattern
-**   strings by delimiting singular patterns with pipe symbol '|' (the GNU way)
+** * the ability of specifying several patterns implemented
+**   as a one cumulative array of pattern strings
+**   where each pattern is delimited with a pipe symbol '|' (the GNU way)
 ** * tests output matches Ubuntu grep utility
 */
-#define _GNU_SOURCE
+#define _GNU_SOURCE  // getline function
 #include <errno.h>
 #include <getopt.h>
 #include <regex.h>
@@ -14,7 +14,7 @@
 #include <string.h>
 #define ERROR -1
 #define SUCCESS 0
-#define PATTERN_BUF 16  // initial size
+#define PATTERN_INITIAL_BUF 16
 #define DELIM_LEN 2
 // codes for add_pattern function
 #define FROM_FILE 0
@@ -74,6 +74,7 @@ int add_pattern_from_file(t_info *re_pattern, char *filename) {
     return ERROR;
   }
 
+  int result = ERROR;
   char *line = NULL;
   size_t capacity;
   int line_len;
@@ -81,35 +82,58 @@ int add_pattern_from_file(t_info *re_pattern, char *filename) {
     if (line[line_len - 1] == '\n') {
       line[--line_len] = '\0';
     }
-    if (add_pattern_to_re(re_pattern, line) != SUCCESS) {
-      return ERROR;
+    if ((result = add_pattern_to_re(re_pattern, line)) != SUCCESS) {
+      break;
     }
   }
   free(line);
   fclose(file);
 
-  return SUCCESS;
+  return result;
 }
 
 int add_pattern(t_info *re_pattern, char *optarg, int arg) {
+  if (arg != FROM_FILE && arg != FROM_E) {
+    return ERROR;
+  }
+
+  int result = SUCCESS;
   if (re_pattern->capacity == 0) {
-    char *tmp = (char *)calloc(PATTERN_BUF, sizeof(char));
+    char *tmp = (char *)calloc(PATTERN_INITIAL_BUF, sizeof(char));
     if (tmp != NULL) {
       re_pattern->str = tmp;
-      re_pattern->capacity = PATTERN_BUF;
+      re_pattern->capacity = PATTERN_INITIAL_BUF;
+    } else {
+      result = ERROR;
+    }
+  }
+
+  if (result == SUCCESS) {
+    if (arg == FROM_FILE) {
+      result = add_pattern_from_file(re_pattern, optarg);
+    }
+    if (arg == FROM_E) {
+      result = add_pattern_to_re(re_pattern, optarg);
+    }
+    if (result == ERROR) {
+      free(re_pattern->str);
+    }
+  }
+
+  return result;
+}
+
+int reduce_str_capacity_to_fit_len(t_info *re_pattern) {
+  if (re_pattern->capacity > re_pattern->len + 1) {
+    void *tmp = (char *)realloc(re_pattern->str, re_pattern->len + 1);
+    if (tmp != NULL) {
+      re_pattern->str = tmp;
     } else {
       return ERROR;
     }
   }
 
-  if (arg == FROM_FILE) {
-    return add_pattern_from_file(re_pattern, optarg);
-  }
-  if (arg == FROM_E) {
-    return add_pattern_to_re(re_pattern, optarg);
-  }
-
-  return ERROR;
+  return SUCCESS;
 }
 
 /* getopt_long is used for portability
@@ -129,28 +153,13 @@ int parse_options(int argc, char *argv[], t_options *flags,
           return ERROR;
         }
         break;
-      case 'i':
-        flags->i = true;
-        re_pattern->regex_flag |= REG_ICASE;
-        break;
-      case 'v':
-        flags->v = true;
-        break;
-      case 'c':
-        flags->c = true;
-        break;
-      case 'l':
-        flags->l = true;
-        break;
-      case 'n':
-        flags->n = true;
-        break;
-      case 'h':
-        flags->h = true;
-        break;
-      case 's':
-        flags->s = true;
-        break;
+      case 'i': flags->i = true; break;
+      case 'v': flags->v = true; break;
+      case 'c': flags->c = true; break;
+      case 'l': flags->l = true; break;
+      case 'n': flags->n = true; break;
+      case 'h': flags->h = true; break;
+      case 's': flags->s = true; break;
       case 'f':
         flags->f = true;
         if (add_pattern(re_pattern, optarg, FROM_FILE) != SUCCESS) {
@@ -158,16 +167,15 @@ int parse_options(int argc, char *argv[], t_options *flags,
         }
         re_pattern->specified_through_option = true;
         break;
-      case 'o':
-        flags->o = true;
-        break;
+      case 'o': flags->o = true; break;
       case '?':
         fprintf(stderr, "%s: invalid option -- '%c'\n", PROGRAM_NAME, optopt);
         print_usage();
         return ERROR;
     }
   }
-  return SUCCESS;
+
+  return reduce_str_capacity_to_fit_len(re_pattern);
 }
 
 void line_related_output(char *line, t_options *flags, regmatch_t *regmatch,
@@ -219,11 +227,11 @@ void handle_option_o(t_re *re, t_options *flags, char *line, int line_ndx,
 
 void process_file(FILE *file, char *filename, t_options *flags, t_re *re) {
   char *line = NULL;
-  size_t len = 0;
+  size_t capacity = 0;
   int matched_n = 0;
   int line_ndx = 0;  // +1 -- human readable
 
-  while (getline(&line, &len, file) > 0) {
+  while (getline(&line, &capacity, file) > 0) {
     ++line_ndx;
     int result = regexec(re->regex, line, 1, re->regmatch, 0);
 
@@ -249,7 +257,6 @@ void process_file(FILE *file, char *filename, t_options *flags, t_re *re) {
 
 void cook_search(int argc, char *argv[], t_options *flags, t_info *re_pattern) {
   char *re_str = re_pattern->str;
-  int regex_flag = re_pattern->regex_flag;
   t_re re = {.regex = &(regex_t){},
              .regmatch = &(regmatch_t){},
              .is_pattern_dot = is_pattern_dot(re_pattern)};
@@ -257,7 +264,7 @@ void cook_search(int argc, char *argv[], t_options *flags, t_info *re_pattern) {
   // re_str = "((\\((^";
 #endif
 
-  int result = regcomp(re.regex, re_str, regex_flag);
+  int result = regcomp(re.regex, re_str, flags->i ? REG_ICASE : 0);
   if (result == SUCCESS) {
     for (char **filename = &argv[optind]; filename != &argv[argc]; ++filename) {
       FILE *file = fopen(*filename, "r");

@@ -7,11 +7,13 @@ CLR="\033[38;5;117m"
 RST="\033[0m"
 
 # docker rmi -f $image &>/dev/null
+# starting docker if is not running yet
 if ! pgrep -x "Docker" >/dev/null; then
   echo "Starting Docker app..."
   open -a Docker
   sleep 10
 fi
+# setting default image if another is not specified
 if test -z "$image"; then
   image="ubuntu"
 fi
