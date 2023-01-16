@@ -69,9 +69,6 @@ asan: clean
 	cp Makefile s21* ./test_grep
 	@cd test_grep && bash test_func_grep.sh
 	rm ./test_grep/s21*
-# test: build
-# 	printf "\ec"
-# 	@cd $(DIR_TESTS) && utility=$(PROGRAM) bash test.sh
 test: build
 	printf "\ec"
 	@cd test_grep && time bash test_func_grep.sh
