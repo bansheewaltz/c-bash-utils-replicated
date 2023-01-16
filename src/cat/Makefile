@@ -98,7 +98,7 @@ leaks: compiler
 	@if [ -z "$$args" ]; then\
     	args="$(DYNAMIC_SAMPLE)";\
 	fi;\
-	leaks -atExit -- ./$(EXE) $$args 2>/dev/null
+	leaks -atExit -- ./$(EXE) $$args 2>/dev/null | grep -aE 'nodes|total|TOTAL|LEAK' | nl -b n
 dynamic: clean
 	@printf "testing args: $(DYNAMIC_SAMPLE)\n\n"
 	@if [ $(OS) == "MACOS" ]; then\
