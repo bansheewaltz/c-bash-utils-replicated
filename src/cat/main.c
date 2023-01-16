@@ -12,12 +12,12 @@
 #define BUFFER_SIZE 4096
 #define FALSE_ALL_BOOLS {false};
 
-char const *g_PROGRAM_NAME;
+char const *PROGRAM_NAME;
 
 int main(int argc, char *argv[]) {
   t_options s_flags = FALSE_ALL_BOOLS;
   int filename_was_given = false;  // will hold the argv index of the first file
-  g_PROGRAM_NAME = argv[0] + 2;    // to omit "./"
+  PROGRAM_NAME = argv[0] + 2;      // to omit "./"
 
   if (parse_options(argc, argv, &s_flags, &filename_was_given)) {
     FILE *p_file = NULL;

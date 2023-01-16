@@ -77,9 +77,10 @@ test: build
 	@cd test_grep && time bash test_func_grep.sh
 ttest: clean build
 	printf "\ec"
-	@./s21_grep &> /dev/null # at the first start of an executable macOS performs noratization which takes time
-	@cd test_grep && version=$(PROGRAM) mode=time time bash test_func_grep.sh
-	@cd test_grep && version=$(EXE) mode=time time bash test_func_grep.sh
+	@./s21_grep &> /dev/null # at the first start of an executable macOS performs notarization which takes time
+	@cd test_grep && time version=$(PROGRAM) mode=time bash test_func_grep.sh
+	@echo
+	@cd test_grep && time version=$(EXE)     mode=time bash test_func_grep.sh
 complex: clean
 	printf "\ec"
 	$(MAKE) compiler
@@ -122,14 +123,9 @@ static:
 	@echo
 linter:
 	bash $(DIR_SCRIPTS)/run_linter.sh
-verter:
+verter: docker_start
 	$(MAKE) clean
 	$(MAKE) -C ../cat/ clean
-	@if ! pgrep -x "Docker" >/dev/null; then\
-		echo "Starting Docker app...";\
-		open -a Docker;\
-		sleep 10;\
-	fi
 	cd $(DIR_PROJ_ROOT)/materials/build/ && bash run.sh
 	@echo
 clean:
@@ -156,8 +152,20 @@ gitignore:
 	@cat .gitignore
 add_clang:
 	-cp $(DIR_PROJ_ROOT)/materials/linters/.clang-format $(DIR_SRC)
-docker: clean
-	utility=$(PROGRAM) bash $(DIR_SCRIPTS)/run_dockerfile_image.sh $(image) $(goal)
+docker_start:
+	@if test $(OS) != "MACOS"; then\
+		echo "Error: Docker can be run only on macOS for now";\
+		exit 1;\
+	fi
+	@if test $(OS) == "MACOS" && ! pgrep -x "Docker" >/dev/null; then\
+		echo "Starting Docker app...";\
+		open -a Docker;\
+		sleep 10;\
+	fi
+docker_install: # for ubuntu
+	curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
+docker: clean docker_start
+	utility=$(PROGRAM) image=$(image) goal=$(goal) bash $(DIR_SCRIPTS)/run_docker.sh || true
 docker_prune:
 	yes | docker system prune -a
 install: build

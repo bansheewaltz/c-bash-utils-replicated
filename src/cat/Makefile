@@ -54,7 +54,7 @@ leak: build # fast check
 leaks: build
 	clear
 	@cp $(EXE) $(DIR_TESTS)
-	@cd $(DIR_TESTS) && sh test_leak.sh
+	@cd $(DIR_TESTS) && sh test_leak.sh 2>/dev/null
 	@rm -rf $(DIR_TESTS)/$(EXE)
 check_style: build add_clang
 	clear

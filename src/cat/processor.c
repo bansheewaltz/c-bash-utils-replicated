@@ -81,7 +81,7 @@ static void number_lines(t_info *s_info) {
 void process_text(FILE *p_file, t_options *s_flags) {
   t_info s_info = {.str_count = 1, .prev_ch = '\n', .s_flags = s_flags};
 
-  while ((char)(s_info.cur_ch = getc(p_file)) != EOF) {
+  while ((signed char)(s_info.cur_ch = getc(p_file)) != EOF) {
     s_info.already_printed = false;
     if (isgraph(s_info.cur_ch) && s_info.prev_ch != '\n') {
       putchar(s_info.cur_ch);

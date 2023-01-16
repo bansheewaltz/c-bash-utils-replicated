@@ -6,7 +6,6 @@ cat_stripped="-b -e -n -t -v" # for Linux Alpine and lets assume that for other 
 cat_macOS_regular="-b -e -n -s -t -v"
 cat_macOS_inscript_compatible="-b -e -n -s -t -v --number --squeeze-blank --number-nonblank"
 cat_GNU="-b -e -n -s -t -v -E -T --number --squeeze-blank --number-nonblank"
-grep="-i -v -c -l -n -h -s -o \"print\""
 
 ##### USER DEFINED GLOBAL TESTING PARAMETERS
 # utility="cat" # is passed by shell variable
@@ -88,9 +87,6 @@ combine_and_pass() {
     for ((i = 0; i < $#; i++)); do
       (((1 << i) & value)) && parts+=("${args[i]}")
     done
-    # if [ "$opt_valgrind" == "true" ]; then
-    #   valgrind_testing "${parts[@]}"
-    # fi
     automated_testing "${parts[@]}"
   done
 }
@@ -232,7 +228,7 @@ prepare_log_dir
 
 combine_and_pass $options_set
 print_summary
-exec 2>/dev/null # *Turn on/off by (un)commenting to suppress stderror output*
+# exec 2>/dev/null # *Turn on/off by (un)commenting to suppress stderror output*
 handwritten_entries_test
 
 clear_temp_files

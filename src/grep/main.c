@@ -153,13 +153,27 @@ int parse_options(int argc, char *argv[], t_options *flags,
           return ERROR;
         }
         break;
-      case 'i': flags->i = true; break;
-      case 'v': flags->v = true; break;
-      case 'c': flags->c = true; break;
-      case 'l': flags->l = true; break;
-      case 'n': flags->n = true; break;
-      case 'h': flags->h = true; break;
-      case 's': flags->s = true; break;
+      case 'i':
+        flags->i = true;
+        break;
+      case 'v':
+        flags->v = true;
+        break;
+      case 'c':
+        flags->c = true;
+        break;
+      case 'l':
+        flags->l = true;
+        break;
+      case 'n':
+        flags->n = true;
+        break;
+      case 'h':
+        flags->h = true;
+        break;
+      case 's':
+        flags->s = true;
+        break;
       case 'f':
         flags->f = true;
         if (add_pattern(re_pattern, optarg, FROM_FILE) != SUCCESS) {
@@ -167,7 +181,9 @@ int parse_options(int argc, char *argv[], t_options *flags,
         }
         re_pattern->specified_through_option = true;
         break;
-      case 'o': flags->o = true; break;
+      case 'o':
+        flags->o = true;
+        break;
       case '?':
         fprintf(stderr, "%s: invalid option -- '%c'\n", PROGRAM_NAME, optopt);
         print_usage();
