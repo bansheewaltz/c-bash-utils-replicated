@@ -1,9 +1,0 @@
-FROM dondarri/ubuntu_development
-
-WORKDIR /usr/project/src
-
-COPY . ..
-
-RUN echo 'export PS1="\033[1;34m\u@ubuntu_container\033[0m:\W$ "' > ~/.profile
-CMD [ "bash", "-l"]
-# ENTRYPOINT /bin/bash

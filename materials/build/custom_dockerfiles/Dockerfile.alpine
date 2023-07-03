@@ -1,7 +1,0 @@
-FROM dondarri/alpine_development
-
-WORKDIR /usr/project/src
-
-COPY . ..
-
-ENTRYPOINT /bin/bash
