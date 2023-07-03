@@ -1,0 +1,21 @@
+  -s test_files/test_1_cat.txt
+  -b -e -n -s -t -v test_files/test_1_cat.txt
+  -b test_files/test_1_cat.txt nofile.txt
+  -t test_files/test_3_cat.txt
+  -n test_files/test_2_cat.txt
+  no_file.txt
+  -n -b test_files/test_1_cat.txt
+  -s -n -e test_files/test_4_cat.txt
+  test_files/test_1_cat.txt -n
+  -n test_files/test_1_cat.txt
+  -n test_files/test_1_cat.txt test_files/test_2_cat.txt
+  -v test_files/test_5_cat.txt
+  -- test_files/test_5_cat.txt
+  -T test_files/test_1_cat.txt
+  -E test_files/test_1_cat.txt
+  -vT test_files/test_3_cat.txt
+  --number test_files/test_2_cat.txt
+  --squeeze-blank test_files/test_1_cat.txt
+  --number-nonblank test_files/test_4_cat.txt
+  test_files/test_1_cat.txt --number --number
+  -bnvste test_files/test_6_cat.txt

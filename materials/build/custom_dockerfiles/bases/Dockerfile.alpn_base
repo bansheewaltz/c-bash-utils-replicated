@@ -1,0 +1,10 @@
+FROM alpine
+
+WORKDIR /usr/project
+
+RUN apk --no-cache add gcc \
+    valgrind \
+    make \
+    musl-dev \
+    vim \
+    bash
